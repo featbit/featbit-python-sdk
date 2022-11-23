@@ -1,0 +1,804 @@
+{
+  "messageType": "data-sync",
+  "data": {
+    "eventType": "full",
+    "featureFlags": [
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "ff-test-seg",
+        "key": "ff-test-seg",
+        "variationType": "string",
+        "variations": [
+          {
+            "id": "66b6a8f2-382a-4a9d-88c7-b15f61cd915a",
+            "value": "teamA"
+          },
+          {
+            "id": "0ba8f62e-949f-4097-aac3-23b8edaa90a7",
+            "value": "teamB"
+          }
+        ],
+        "targetUsers": [
+          {
+            "keyIds": [],
+            "variationId": "66b6a8f2-382a-4a9d-88c7-b15f61cd915a"
+          },
+          {
+            "keyIds": [],
+            "variationId": "0ba8f62e-949f-4097-aac3-23b8edaa90a7"
+          }
+        ],
+        "rules": [
+          {
+            "id": "a706bf5b-aa59-497f-b938-054d32f49261",
+            "name": "规则 1",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "User is in segment",
+                "op": null,
+                "value": "[\"a3ad3010-3bfa-415f-a49a-af39015670f7\"]"
+              }
+            ],
+            "variations": [
+              {
+                "id": "66b6a8f2-382a-4a9d-88c7-b15f61cd915a",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          }
+        ],
+        "isEnabled": true,
+        "disabledVariationId": "0ba8f62e-949f-4097-aac3-23b8edaa90a7",
+        "fallthrough": {
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "0ba8f62e-949f-4097-aac3-23b8edaa90a7",
+              "rollout": [
+                0,
+                1
+              ],
+              "exptRollout": 0
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "isArchived": false,
+        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "createdAt": "2022-10-25T20:51:09.334Z",
+        "updatedAt": "2022-10-25T20:53:17.405074Z",
+        "id": "69185c5b-9f67-4981-94fa-af390157a3e0"
+      },
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "ff-test-bool",
+        "key": "ff-test-bool",
+        "variationType": "boolean",
+        "variations": [
+          {
+            "id": "62f6be32-1845-43fa-a8db-576cf63753c3",
+            "value": "true"
+          },
+          {
+            "id": "59d44fad-88d8-40d9-bf46-79486e6be9b1",
+            "value": "false"
+          }
+        ],
+        "targetUsers": [
+          {
+            "keyIds": [
+              "test-user-1",
+              "test-user-2"
+            ],
+            "variationId": "62f6be32-1845-43fa-a8db-576cf63753c3"
+          },
+          {
+            "keyIds": [],
+            "variationId": "59d44fad-88d8-40d9-bf46-79486e6be9b1"
+          }
+        ],
+        "rules": [],
+        "isEnabled": true,
+        "disabledVariationId": "59d44fad-88d8-40d9-bf46-79486e6be9b1",
+        "fallthrough": {
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "62f6be32-1845-43fa-a8db-576cf63753c3",
+              "rollout": [
+                0,
+                0.5
+              ],
+              "exptRollout": 0
+            },
+            {
+              "id": "59d44fad-88d8-40d9-bf46-79486e6be9b1",
+              "rollout": [
+                0.5,
+                1
+              ],
+              "exptRollout": 0
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "isArchived": false,
+        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "createdAt": "2022-10-25T20:54:00.878Z",
+        "updatedAt": "2022-10-25T20:56:07.4183895Z",
+        "id": "1f517d5e-41f2-422b-8514-af3901586ce7"
+      },
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "ff-test-number",
+        "key": "ff-test-number",
+        "variationType": "number",
+        "variations": [
+          {
+            "id": "f5aebc05-1490-49e6-8c76-5e49fa113e09",
+            "value": "1"
+          },
+          {
+            "id": "2ef08dd7-3f94-48b1-9a9c-0d38a80fdd87",
+            "value": "33"
+          },
+          {
+            "id": "a569dae1-62b0-40ee-8c12-7f128725cd24",
+            "value": "86"
+          },
+          {
+            "id": "a278f6b8-c105-4fb3-8ccc-27c27448f48c",
+            "value": "9999"
+          }
+        ],
+        "targetUsers": [
+          {
+            "keyIds": [],
+            "variationId": "f5aebc05-1490-49e6-8c76-5e49fa113e09"
+          },
+          {
+            "keyIds": [],
+            "variationId": "2ef08dd7-3f94-48b1-9a9c-0d38a80fdd87"
+          },
+          {
+            "keyIds": [],
+            "variationId": "a569dae1-62b0-40ee-8c12-7f128725cd24"
+          },
+          {
+            "keyIds": [],
+            "variationId": "a278f6b8-c105-4fb3-8ccc-27c27448f48c"
+          }
+        ],
+        "rules": [
+          {
+            "id": "9600a0b4-4fe5-482e-80ed-3b87e42fd8b2",
+            "name": "规则 1",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "country",
+                "op": "Equal",
+                "value": "us"
+              }
+            ],
+            "variations": [
+              {
+                "id": "f5aebc05-1490-49e6-8c76-5e49fa113e09",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "68fe322c-d3d8-4107-88fa-a31de1a48547",
+            "name": "规则 2",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "country",
+                "op": "Equal",
+                "value": "fr"
+              }
+            ],
+            "variations": [
+              {
+                "id": "2ef08dd7-3f94-48b1-9a9c-0d38a80fdd87",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "c8584dbd-29a3-47ef-bbff-2f11e4d88c2b",
+            "name": "规则 3",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "country",
+                "op": "Equal",
+                "value": "cn"
+              }
+            ],
+            "variations": [
+              {
+                "id": "a569dae1-62b0-40ee-8c12-7f128725cd24",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          }
+        ],
+        "isEnabled": true,
+        "disabledVariationId": "a278f6b8-c105-4fb3-8ccc-27c27448f48c",
+        "fallthrough": {
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "a278f6b8-c105-4fb3-8ccc-27c27448f48c",
+              "rollout": [
+                0,
+                1
+              ],
+              "exptRollout": 0
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "isArchived": false,
+        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "createdAt": "2022-10-25T20:57:00.315Z",
+        "updatedAt": "2022-10-25T20:59:25.073141Z",
+        "id": "8d1b21eb-89f9-44b3-ac4c-af3901593f2e"
+      },
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "ff-test-string",
+        "key": "ff-test-string",
+        "variationType": "string",
+        "variations": [
+          {
+            "id": "5adef11d-0607-4688-967c-73a890572ee8",
+            "value": "email"
+          },
+          {
+            "id": "a04b6251-bf4d-4868-a73d-e1d566b71cc9",
+            "value": "phone number"
+          },
+          {
+            "id": "73009a42-d427-4d28-802a-15c40722bd8c",
+            "value": "others"
+          }
+        ],
+        "targetUsers": [
+          {
+            "keyIds": [],
+            "variationId": "5adef11d-0607-4688-967c-73a890572ee8"
+          },
+          {
+            "keyIds": [],
+            "variationId": "a04b6251-bf4d-4868-a73d-e1d566b71cc9"
+          },
+          {
+            "keyIds": [],
+            "variationId": "73009a42-d427-4d28-802a-15c40722bd8c"
+          }
+        ],
+        "rules": [
+          {
+            "id": "29f45488-b3cc-497d-8a80-16b2c3bb7b6a",
+            "name": "规则 1",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "keyId",
+                "op": "MatchRegex",
+                "value": "^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$"
+              }
+            ],
+            "variations": [
+              {
+                "id": "5adef11d-0607-4688-967c-73a890572ee8",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "777f944d-c25b-44e6-b26c-d0cfc81d7b00",
+            "name": "规则 2",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "keyId",
+                "op": "MatchRegex",
+                "value": "^(\\+?0?86\\-?)?1[345789]\\d{9}$"
+              }
+            ],
+            "variations": [
+              {
+                "id": "a04b6251-bf4d-4868-a73d-e1d566b71cc9",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "20e1c7b3-e5c3-4ce6-9a02-ae299fdab77c",
+            "name": "规则 3",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "keyId",
+                "op": "MatchRegex",
+                "value": "^(\\+?33|0)[67]\\d{8}$"
+              }
+            ],
+            "variations": [
+              {
+                "id": "a04b6251-bf4d-4868-a73d-e1d566b71cc9",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          }
+        ],
+        "isEnabled": true,
+        "disabledVariationId": "73009a42-d427-4d28-802a-15c40722bd8c",
+        "fallthrough": {
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "73009a42-d427-4d28-802a-15c40722bd8c",
+              "rollout": [
+                0,
+                1
+              ],
+              "exptRollout": 0
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "isArchived": false,
+        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "createdAt": "2022-10-25T20:59:56.538Z",
+        "updatedAt": "2022-10-25T21:17:25.531934Z",
+        "id": "31f95f40-a97a-43ec-b856-af39015a0db1"
+      },
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "ff-test-json",
+        "key": "ff-test-json",
+        "variationType": "json",
+        "variations": [
+          {
+            "id": "b4c3a257-759f-429a-9bb8-0f30244a4aa5",
+            "value": "{\n    \"code\": 200,\n    \"reason\": \"you win 100 euros\"\n}"
+          },
+          {
+            "id": "112a8d83-26df-4238-aadc-82836c671844",
+            "value": "{\n    \"code\": 404,\n    \"reason\": \"fail to win the lottery\"\n}"
+          }
+        ],
+        "targetUsers": [
+          {
+            "keyIds": [],
+            "variationId": "b4c3a257-759f-429a-9bb8-0f30244a4aa5"
+          },
+          {
+            "keyIds": [],
+            "variationId": "112a8d83-26df-4238-aadc-82836c671844"
+          }
+        ],
+        "rules": [],
+        "isEnabled": true,
+        "disabledVariationId": "112a8d83-26df-4238-aadc-82836c671844",
+        "fallthrough": {
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "b4c3a257-759f-429a-9bb8-0f30244a4aa5",
+              "rollout": [
+                0,
+                0.25
+              ],
+              "exptRollout": 0
+            },
+            {
+              "id": "112a8d83-26df-4238-aadc-82836c671844",
+              "rollout": [
+                0.25,
+                1
+              ],
+              "exptRollout": 0
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "isArchived": false,
+        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "createdAt": "2022-10-25T21:18:27.175Z",
+        "updatedAt": "2022-10-25T21:31:05.4038972Z",
+        "id": "829845b2-300d-49e1-9c19-af39015f2338"
+      },
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "ff-evaluation-test",
+        "key": "ff-evaluation-test",
+        "variationType": "string",
+        "variations": [
+          {
+            "id": "7605a908-e7ec-450a-a72c-c10ad9395509",
+            "value": "teamA"
+          },
+          {
+            "id": "e0d36071-89a1-452e-a881-8b5684753289",
+            "value": "teamB"
+          },
+          {
+            "id": "aef687c3-41d8-40db-8710-4c1f9bac6560",
+            "value": "teamC"
+          },
+          {
+            "id": "9253b858-c2b8-47cd-a056-14025959a1c5",
+            "value": "teamD"
+          },
+          {
+            "id": "ef43195a-8874-44a0-aaef-f1d33c476799",
+            "value": "teamE"
+          },
+          {
+            "id": "1b540abc-291f-4a4e-a129-19bf2101a6bc",
+            "value": "teamF"
+          },
+          {
+            "id": "2b61a434-f29e-4913-9b4c-d22c7bf2c68d",
+            "value": "teamG"
+          },
+          {
+            "id": "5a0fab50-c344-4b1e-b15f-c5bfae1d0087",
+            "value": "teamH"
+          },
+          {
+            "id": "eacac1c1-190b-4822-897c-ec7867a4da85",
+            "value": "teamI"
+          }
+        ],
+        "targetUsers": [
+          {
+            "keyIds": [],
+            "variationId": "7605a908-e7ec-450a-a72c-c10ad9395509"
+          },
+          {
+            "keyIds": [
+              "test-target-user"
+            ],
+            "variationId": "e0d36071-89a1-452e-a881-8b5684753289"
+          },
+          {
+            "keyIds": [],
+            "variationId": "aef687c3-41d8-40db-8710-4c1f9bac6560"
+          },
+          {
+            "keyIds": [],
+            "variationId": "9253b858-c2b8-47cd-a056-14025959a1c5"
+          },
+          {
+            "keyIds": [],
+            "variationId": "ef43195a-8874-44a0-aaef-f1d33c476799"
+          },
+          {
+            "keyIds": [],
+            "variationId": "1b540abc-291f-4a4e-a129-19bf2101a6bc"
+          },
+          {
+            "keyIds": [],
+            "variationId": "2b61a434-f29e-4913-9b4c-d22c7bf2c68d"
+          },
+          {
+            "keyIds": [],
+            "variationId": "5a0fab50-c344-4b1e-b15f-c5bfae1d0087"
+          },
+          {
+            "keyIds": [],
+            "variationId": "eacac1c1-190b-4822-897c-ec7867a4da85"
+          }
+        ],
+        "rules": [
+          {
+            "id": "e01374f3-c2bc-4ddd-9130-b87c24462899",
+            "name": "Test True Rule",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "graduated",
+                "op": "IsTrue",
+                "value": "IsTrue"
+              }
+            ],
+            "variations": [
+              {
+                "id": "aef687c3-41d8-40db-8710-4c1f9bac6560",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "dfb117f2-2fcc-46c8-a7da-f1bf8bdef438",
+            "name": "Test Equal Rule",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "country",
+                "op": "Equal",
+                "value": "CHN"
+              }
+            ],
+            "variations": [
+              {
+                "id": "9253b858-c2b8-47cd-a056-14025959a1c5",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "89bbebdb-39a6-4a61-8b52-91502de8a799",
+            "name": "Test Than Rule",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "salary",
+                "op": "BiggerEqualThan",
+                "value": "1000"
+              },
+              {
+                "property": "salary",
+                "op": "LessEqualThan",
+                "value": "3000"
+              }
+            ],
+            "variations": [
+              {
+                "id": "ef43195a-8874-44a0-aaef-f1d33c476799",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "f0fe243f-8f3a-4e30-9aa9-a5663ff5d455",
+            "name": "Test Contain Rule",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "email",
+                "op": "Contains",
+                "value": "gmail"
+              }
+            ],
+            "variations": [
+              {
+                "id": "1b540abc-291f-4a4e-a129-19bf2101a6bc",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "d1d7df63-4040-4a34-92a6-12755a1c327b",
+            "name": "Test IsOneOf Rule",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "major",
+                "op": "IsOneOf",
+                "value": "[\"CS\",\"MATH\",\"PHYSICS\"]"
+              }
+            ],
+            "variations": [
+              {
+                "id": "2b61a434-f29e-4913-9b4c-d22c7bf2c68d",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "b3e61368-da26-4783-8dda-f6c971323f03",
+            "name": "Test StartEnd Rule",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "name",
+                "op": "StartsWith",
+                "value": "group"
+              },
+              {
+                "property": "name",
+                "op": "EndsWith",
+                "value": "user"
+              }
+            ],
+            "variations": [
+              {
+                "id": "5a0fab50-c344-4b1e-b15f-c5bfae1d0087",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          },
+          {
+            "id": "15506c6d-3380-4019-9767-c14a142a652a",
+            "name": "Rule 7",
+            "includedInExpt": false,
+            "conditions": [
+              {
+                "property": "phone",
+                "op": "MatchRegex",
+                "value": "^(\\+?0?86\\-?)?1[345789]\\d{9}$"
+              }
+            ],
+            "variations": [
+              {
+                "id": "eacac1c1-190b-4822-897c-ec7867a4da85",
+                "rollout": [
+                  0,
+                  1
+                ],
+                "exptRollout": 0
+              }
+            ]
+          }
+        ],
+        "isEnabled": true,
+        "disabledVariationId": "7605a908-e7ec-450a-a72c-c10ad9395509",
+        "fallthrough": {
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "7605a908-e7ec-450a-a72c-c10ad9395509",
+              "rollout": [
+                0,
+                1
+              ],
+              "exptRollout": 1
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "isArchived": false,
+        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "createdAt": "2022-11-05T19:25:34.102Z",
+        "updatedAt": "2022-11-05T21:18:40.1500633Z",
+        "id": "5e8e5c37-9d69-432f-80ba-af4401402207"
+      },
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "ff-test-off",
+        "key": "ff-test-off",
+        "variationType": "boolean",
+        "variations": [
+          {
+            "id": "bf2ba738-0e1e-489e-89a4-d349bfe7a51f",
+            "value": "true"
+          },
+          {
+            "id": "675dfd98-5d02-4d9b-8f12-84a717c6479f",
+            "value": "false"
+          }
+        ],
+        "targetUsers": [
+          {
+            "keyIds": [],
+            "variationId": "bf2ba738-0e1e-489e-89a4-d349bfe7a51f"
+          },
+          {
+            "keyIds": [],
+            "variationId": "675dfd98-5d02-4d9b-8f12-84a717c6479f"
+          }
+        ],
+        "rules": [],
+        "isEnabled": false,
+        "disabledVariationId": "675dfd98-5d02-4d9b-8f12-84a717c6479f",
+        "fallthrough": {
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "bf2ba738-0e1e-489e-89a4-d349bfe7a51f",
+              "rollout": [
+                0,
+                1
+              ],
+              "exptRollout": 1
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "isArchived": false,
+        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
+        "createdAt": "2022-10-27T13:29:50.696Z",
+        "updatedAt": "2022-11-05T21:30:28.7248857Z",
+        "id": "f682adb3-b041-4795-a114-af3b00de6e3c"
+      }
+    ],
+    "segments": [
+      {
+        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "name": "team-seg",
+        "description": "test segment",
+        "included": [
+          "test-user-1"
+        ],
+        "excluded": [
+          "test-user-2"
+        ],
+        "rules": [
+          {
+            "id": "0a693f94-befd-4b2a-8f6a-bbeac5344d9b",
+            "name": "规则 1",
+            "conditions": [
+              {
+                "property": "major",
+                "op": "IsOneOf",
+                "value": "[\"math\",\"cs\"]"
+              }
+            ]
+          }
+        ],
+        "isArchived": false,
+        "createdAt": "2022-10-25T20:46:47.436Z",
+        "updatedAt": "2022-10-25T20:50:06.603475Z",
+        "id": "a3ad3010-3bfa-415f-a49a-af39015670f7"
+      }
+    ]
+  }
+}
