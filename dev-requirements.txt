@@ -1,0 +1,10 @@
+certifi>=2018.4.16
+urllib3>=1.22.0
+websocket-client>=1.0.0
+python-dateutil>=2.8.2
+flake8
+pytest
+pytest-mock
+autopep8
+build
+twine
