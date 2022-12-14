@@ -133,16 +133,15 @@ def cast_variation_by_flag_type(flag_type: Optional[str], variation: Optional[st
 
 
 def simple_type_inference(value: Any) -> Optional[str]:
-    try:
-        if isinstance(value, bool):
-            return 'boolean'
-        elif isinstance(value, str):
-            return 'string'
-        elif isinstance(value, Iterable) or isinstance(value, Mapping):
-            return 'json'
-        elif is_numeric(str(value)):
-            return 'number'
-        else:
-            return None
-    except:
+    if isinstance(value, bool):
+        return 'boolean'
+    elif isinstance(value, str):
+        return 'string'
+    elif isinstance(value, Iterable) or isinstance(value, Mapping):
+        return 'json'
+    elif is_numeric(value):
+        return 'number'
+    elif value is None:
         return None
+    else:
+        raise ValueError("value type is not supported")

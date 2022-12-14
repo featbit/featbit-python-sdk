@@ -38,7 +38,8 @@ class FBUser(Jsonfy):
         self._customs = {}
         if len(kwargs) > 0:
             self._customs \
-                .update(dict((k, str(v)) for k, v in kwargs.items() if isinstance(k, str) and k.lower() not in __BUILTINS_MAPING__.keys() and (isinstance(v, str) or is_numeric(v))))
+                .update(dict((k, str(v)) for k, v in kwargs.items() if isinstance(k, str) and k.lower() not in __BUILTINS_MAPING__.keys()
+                             and (isinstance(v, str) or is_numeric(v) or isinstance(v, bool))))
 
     @staticmethod
     def from_dict(user: Dict[str, Any]) -> "FBUser":
