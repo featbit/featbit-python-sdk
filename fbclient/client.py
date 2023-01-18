@@ -13,7 +13,7 @@ from fbclient.evaluator import (REASON_CLIENT_NOT_READY, REASON_ERROR,
 from fbclient.event_processor import DefaultEventProcessor, NullEventProcessor
 from fbclient.event_types import FlagEvent, Metric, MetricEvent, UserEvent
 from fbclient.interfaces import DataUpdateStatusProvider
-from fbclient.status import DataUpdateStatusProviderIml
+from fbclient.status import DataUpdateStatusProviderImpl
 from fbclient.status_types import State
 from fbclient.streaming import Streaming, _data_to_dict
 from fbclient.update_processor import NullUpdateProcessor
@@ -79,7 +79,7 @@ class FBClient:
         self._evaluator = Evaluator(lambda key: self._data_storage.get(FEATURE_FLAGS, key),
                                     lambda key: self._data_storage.get(SEGMENTS, key))
         # data updator and status provider
-        self._update_status_provider = DataUpdateStatusProviderIml(config.data_storage)
+        self._update_status_provider = DataUpdateStatusProviderImpl(config.data_storage)
         # update processor
         update_processor_ready = threading.Event()
         self._update_processor = self._build_update_processor(config, self._update_status_provider,
