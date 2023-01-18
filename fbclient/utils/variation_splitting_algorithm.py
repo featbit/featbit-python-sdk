@@ -20,6 +20,6 @@ class VariationSplittingAlgorithm:
             return False
 
     def __percentage_of_key(self) -> float:
-        digest = hashlib.md5(self.__key.encode(encoding='ascii')).digest()
+        digest = hashlib.md5(self.__key.encode(encoding='utf-8')).digest()
         magic_num = int.from_bytes(digest[:4], byteorder='little', signed=True)
         return abs(magic_num / __MIN_INT__)
