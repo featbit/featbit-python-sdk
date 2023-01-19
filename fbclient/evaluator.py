@@ -287,8 +287,9 @@ class Evaluator:
                 return VariationSplittingAlgorithm(new_dispatch_key, [0, upper_bound]).is_key_belongs_to_percentage()
             return False
 
-        dispatch_key = rollout_variations.get('dispatchKey', 'keyid')
-        dispatch_key_value = "".join((flag['key'], user.get(dispatch_key)))  # type: ignore
+        dispatch_key = rollout_variations.get('dispatchKey')
+        dispatch_key = dispatch_key if dispatch_key else 'keyid'
+        dispatch_key_value = "".join((flag['key'], user.get(dispatch_key, "")))  # type: ignore
         for rollout in rollout_variations['variations']:
             if VariationSplittingAlgorithm(dispatch_key_value, rollout['rollout']).is_key_belongs_to_percentage():  # type: ignore
                 send_to_expt = is_send_to_expt(dispatch_key_value, rollout, flag['exptIncludeAllTargets'], rollout_variations['includedInExpt'])  # type: ignore

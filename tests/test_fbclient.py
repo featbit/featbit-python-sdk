@@ -25,7 +25,6 @@ USER_4 = {"key": "test-user-4", "name": "test-user-4", "country": "uk", "major":
 USER_CN_PHONE_NUM = {"key": "18555358000", "name": "test-user-5"}
 USER_FR_PHONE_NUM = {"key": "0603111111", "name": "test-user-6"}
 USER_EMAIL = {"key": "test-user-7@featbit.com", "name": "test-user-7"}
-DUMMY_USER = {"key": "12345", "name": "dummy"}
 
 
 def make_fb_client(update_processor_imp, event_processor_imp, start_wait=15.):
@@ -182,12 +181,12 @@ def test_json_variation():
     with make_fb_client_offline() as client:
         assert client.initialize
         json_object = client.variation("ff-test-json", USER_1, {})
-        assert json_object["code"] == 404
-        assert json_object["reason"] == "fail to win the lottery"
-        flag_state = client.variation_detail("ff-test-json", DUMMY_USER, {})
+        assert json_object["code"] == 200
+        assert json_object["reason"] == "you win 100 euros"
+        flag_state = client.variation_detail("ff-test-json", USER_2, {})
         assert flag_state.success
-        assert flag_state.data.variation["code"] == 200
-        assert flag_state.data.variation["reason"] == "you win 100 euros"
+        assert flag_state.data.variation["code"] == 404
+        assert flag_state.data.variation["reason"] == "fail to win the lottery"
         assert flag_state.data.reason == REASON_FALLTHROUGH
 
 
@@ -215,7 +214,7 @@ def test_get_all_latest_flag_variations():
         ed = all_states.get("ff-test-seg")
         assert ed is not None and ed.variation == "teamA"
         ed = all_states.get("ff-test-json")
-        assert ed is not None and ed.variation["code"] == 404
+        assert ed is not None and ed.variation["code"] == 200
 
 
 def test_variation_argument_error():

@@ -4,89 +4,87 @@
     "eventType": "full",
     "featureFlags": [
       {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
         "name": "ff-test-seg",
         "key": "ff-test-seg",
         "variationType": "string",
         "variations": [
           {
-            "id": "66b6a8f2-382a-4a9d-88c7-b15f61cd915a",
+            "id": "3f8e09d3-3e2f-406c-8a8b-ebf6e5f96307",
             "value": "teamA"
           },
           {
-            "id": "0ba8f62e-949f-4097-aac3-23b8edaa90a7",
+            "id": "f62a3eae-e47f-481c-83eb-1b8fb3c39c9b",
             "value": "teamB"
           }
         ],
-        "targetUsers": [
-          {
-            "keyIds": [],
-            "variationId": "66b6a8f2-382a-4a9d-88c7-b15f61cd915a"
-          },
-          {
-            "keyIds": [],
-            "variationId": "0ba8f62e-949f-4097-aac3-23b8edaa90a7"
-          }
-        ],
+        "targetUsers": [],
         "rules": [
           {
-            "id": "a706bf5b-aa59-497f-b938-054d32f49261",
-            "name": "规则 1",
+            "id": "cf1ca836-a4ef-422e-8996-931aecd248a2",
+            "name": "segment rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
                 "property": "User is in segment",
                 "op": null,
-                "value": "[\"a3ad3010-3bfa-415f-a49a-af39015670f7\"]"
+                "value": "[\u0022a0832b1c-fe73-479f-9a30-af8f003c34bf\u0022]"
               }
             ],
             "variations": [
               {
-                "id": "66b6a8f2-382a-4a9d-88c7-b15f61cd915a",
+                "id": "3f8e09d3-3e2f-406c-8a8b-ebf6e5f96307",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           }
         ],
         "isEnabled": true,
-        "disabledVariationId": "0ba8f62e-949f-4097-aac3-23b8edaa90a7",
+        "disabledVariationId": "f62a3eae-e47f-481c-83eb-1b8fb3c39c9b",
         "fallthrough": {
+          "dispatchKey": null,
           "includedInExpt": true,
           "variations": [
             {
-              "id": "0ba8f62e-949f-4097-aac3-23b8edaa90a7",
+              "id": "f62a3eae-e47f-481c-83eb-1b8fb3c39c9b",
               "rollout": [
                 0,
                 1
               ],
-              "exptRollout": 0
+              "exptRollout": 1
             }
           ]
         },
         "exptIncludeAllTargets": true,
+        "tags": [],
         "isArchived": false,
-        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "createdAt": "2022-10-25T20:51:09.334Z",
-        "updatedAt": "2022-10-25T20:53:17.405074Z",
-        "id": "69185c5b-9f67-4981-94fa-af390157a3e0"
+        "disabledVariation": {
+          "id": "f62a3eae-e47f-481c-83eb-1b8fb3c39c9b",
+          "value": "teamB"
+        },
+        "creatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "updatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "createdAt": "2023-01-19T03:46:13.598Z",
+        "updatedAt": "2023-01-19T07:49:19.642555Z",
+        "id": "74038447-9dcb-4ee1-a77c-af8f003e228f"
       },
       {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
         "name": "ff-test-bool",
         "key": "ff-test-bool",
         "variationType": "boolean",
         "variations": [
           {
-            "id": "62f6be32-1845-43fa-a8db-576cf63753c3",
+            "id": "18b369f8-453f-46d7-88cc-fe41d29ca6e3",
             "value": "true"
           },
           {
-            "id": "59d44fad-88d8-40d9-bf46-79486e6be9b1",
+            "id": "43a1b83b-18df-42a6-971c-b2518455d8f2",
             "value": "false"
           }
         ],
@@ -96,90 +94,76 @@
               "test-user-1",
               "test-user-2"
             ],
-            "variationId": "62f6be32-1845-43fa-a8db-576cf63753c3"
-          },
-          {
-            "keyIds": [],
-            "variationId": "59d44fad-88d8-40d9-bf46-79486e6be9b1"
+            "variationId": "18b369f8-453f-46d7-88cc-fe41d29ca6e3"
           }
         ],
         "rules": [],
         "isEnabled": true,
-        "disabledVariationId": "59d44fad-88d8-40d9-bf46-79486e6be9b1",
+        "disabledVariationId": "43a1b83b-18df-42a6-971c-b2518455d8f2",
         "fallthrough": {
+          "dispatchKey": "name",
           "includedInExpt": true,
           "variations": [
             {
-              "id": "62f6be32-1845-43fa-a8db-576cf63753c3",
+              "id": "18b369f8-453f-46d7-88cc-fe41d29ca6e3",
               "rollout": [
                 0,
                 0.5
               ],
-              "exptRollout": 0
+              "exptRollout": 1
             },
             {
-              "id": "59d44fad-88d8-40d9-bf46-79486e6be9b1",
+              "id": "43a1b83b-18df-42a6-971c-b2518455d8f2",
               "rollout": [
                 0.5,
                 1
               ],
-              "exptRollout": 0
+              "exptRollout": 1
             }
           ]
         },
         "exptIncludeAllTargets": true,
+        "tags": [],
         "isArchived": false,
-        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "createdAt": "2022-10-25T20:54:00.878Z",
-        "updatedAt": "2022-10-25T20:56:07.4183895Z",
-        "id": "1f517d5e-41f2-422b-8514-af3901586ce7"
+        "disabledVariation": {
+          "id": "43a1b83b-18df-42a6-971c-b2518455d8f2",
+          "value": "false"
+        },
+        "creatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "updatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "createdAt": "2023-01-19T08:02:25.731Z",
+        "updatedAt": "2023-01-19T08:04:54.3264271Z",
+        "id": "f36d3f1c-8ce1-4801-a248-af8f008480c7"
       },
       {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
         "name": "ff-test-number",
         "key": "ff-test-number",
         "variationType": "number",
         "variations": [
           {
-            "id": "f5aebc05-1490-49e6-8c76-5e49fa113e09",
+            "id": "3eb2c8db-9654-4945-9f66-b371c4927ef3",
             "value": "1"
           },
           {
-            "id": "2ef08dd7-3f94-48b1-9a9c-0d38a80fdd87",
+            "id": "3e9d31c3-d4a7-4b2c-9d5a-979bd31e1280",
             "value": "33"
           },
           {
-            "id": "a569dae1-62b0-40ee-8c12-7f128725cd24",
+            "id": "a1f5333f-5137-485c-9fe1-267e142ca014",
             "value": "86"
           },
           {
-            "id": "a278f6b8-c105-4fb3-8ccc-27c27448f48c",
+            "id": "d1192640-dd82-4dbe-823e-88d7794b94ee",
             "value": "9999"
           }
         ],
-        "targetUsers": [
-          {
-            "keyIds": [],
-            "variationId": "f5aebc05-1490-49e6-8c76-5e49fa113e09"
-          },
-          {
-            "keyIds": [],
-            "variationId": "2ef08dd7-3f94-48b1-9a9c-0d38a80fdd87"
-          },
-          {
-            "keyIds": [],
-            "variationId": "a569dae1-62b0-40ee-8c12-7f128725cd24"
-          },
-          {
-            "keyIds": [],
-            "variationId": "a278f6b8-c105-4fb3-8ccc-27c27448f48c"
-          }
-        ],
+        "targetUsers": [],
         "rules": [
           {
-            "id": "9600a0b4-4fe5-482e-80ed-3b87e42fd8b2",
-            "name": "规则 1",
+            "id": "41402f94-64c9-4aca-9016-58a019a917c9",
+            "name": "USA",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -190,18 +174,19 @@
             ],
             "variations": [
               {
-                "id": "f5aebc05-1490-49e6-8c76-5e49fa113e09",
+                "id": "3eb2c8db-9654-4945-9f66-b371c4927ef3",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "68fe322c-d3d8-4107-88fa-a31de1a48547",
-            "name": "规则 2",
+            "id": "5a92deed-68db-4dc5-a8d1-721a275180c5",
+            "name": "FRANCE",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -212,18 +197,19 @@
             ],
             "variations": [
               {
-                "id": "2ef08dd7-3f94-48b1-9a9c-0d38a80fdd87",
+                "id": "3e9d31c3-d4a7-4b2c-9d5a-979bd31e1280",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "c8584dbd-29a3-47ef-bbff-2f11e4d88c2b",
-            "name": "规则 3",
+            "id": "5e0a88cd-7117-4d1c-972b-7dc9e747dddc",
+            "name": "CHINA",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -234,307 +220,321 @@
             ],
             "variations": [
               {
-                "id": "a569dae1-62b0-40ee-8c12-7f128725cd24",
+                "id": "a1f5333f-5137-485c-9fe1-267e142ca014",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           }
         ],
         "isEnabled": true,
-        "disabledVariationId": "a278f6b8-c105-4fb3-8ccc-27c27448f48c",
+        "disabledVariationId": "d1192640-dd82-4dbe-823e-88d7794b94ee",
         "fallthrough": {
+          "dispatchKey": null,
           "includedInExpt": true,
           "variations": [
             {
-              "id": "a278f6b8-c105-4fb3-8ccc-27c27448f48c",
+              "id": "d1192640-dd82-4dbe-823e-88d7794b94ee",
               "rollout": [
                 0,
                 1
               ],
-              "exptRollout": 0
+              "exptRollout": 1
             }
           ]
         },
         "exptIncludeAllTargets": true,
+        "tags": [],
         "isArchived": false,
-        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "createdAt": "2022-10-25T20:57:00.315Z",
-        "updatedAt": "2022-10-25T20:59:25.073141Z",
-        "id": "8d1b21eb-89f9-44b3-ac4c-af3901593f2e"
+        "disabledVariation": {
+          "id": "d1192640-dd82-4dbe-823e-88d7794b94ee",
+          "value": "9999"
+        },
+        "creatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "updatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "createdAt": "2023-01-19T08:13:06.323Z",
+        "updatedAt": "2023-01-19T08:18:43.2724282Z",
+        "id": "7056b9d7-7ccb-40bd-b05d-af8f00876f79"
       },
       {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
         "name": "ff-test-string",
         "key": "ff-test-string",
         "variationType": "string",
         "variations": [
           {
-            "id": "5adef11d-0607-4688-967c-73a890572ee8",
+            "id": "24f54a44-985b-4628-95c3-4a7b946bd17a",
             "value": "email"
           },
           {
-            "id": "a04b6251-bf4d-4868-a73d-e1d566b71cc9",
+            "id": "57348136-4c9a-4640-8156-e15931119e81",
             "value": "phone number"
           },
           {
-            "id": "73009a42-d427-4d28-802a-15c40722bd8c",
+            "id": "c4ed60ff-d195-415d-a657-3243286673b7",
             "value": "others"
           }
         ],
-        "targetUsers": [
-          {
-            "keyIds": [],
-            "variationId": "5adef11d-0607-4688-967c-73a890572ee8"
-          },
-          {
-            "keyIds": [],
-            "variationId": "a04b6251-bf4d-4868-a73d-e1d566b71cc9"
-          },
-          {
-            "keyIds": [],
-            "variationId": "73009a42-d427-4d28-802a-15c40722bd8c"
-          }
-        ],
+        "targetUsers": [],
         "rules": [
           {
-            "id": "29f45488-b3cc-497d-8a80-16b2c3bb7b6a",
-            "name": "规则 1",
+            "id": "ed5843e7-0f38-4d61-9945-b7dad6694601",
+            "name": "Email",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
                 "property": "keyId",
                 "op": "MatchRegex",
-                "value": "^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$"
+                "value": "^[a-zA-Z0-9_-]\u002B@[a-zA-Z0-9_-]\u002B(\\.[a-zA-Z0-9_-]\u002B)\u002B$"
               }
             ],
             "variations": [
               {
-                "id": "5adef11d-0607-4688-967c-73a890572ee8",
+                "id": "24f54a44-985b-4628-95c3-4a7b946bd17a",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "777f944d-c25b-44e6-b26c-d0cfc81d7b00",
-            "name": "规则 2",
+            "id": "08187230-7ad4-43c2-b830-b2d4269cecb1",
+            "name": "CN Phone Number",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
                 "property": "keyId",
                 "op": "MatchRegex",
-                "value": "^(\\+?0?86\\-?)?1[345789]\\d{9}$"
+                "value": "^(\\\u002B?0?86\\-?)?1[345789]\\d{9}$"
               }
             ],
             "variations": [
               {
-                "id": "a04b6251-bf4d-4868-a73d-e1d566b71cc9",
+                "id": "57348136-4c9a-4640-8156-e15931119e81",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "20e1c7b3-e5c3-4ce6-9a02-ae299fdab77c",
-            "name": "规则 3",
+            "id": "3fea476d-fb36-4bd1-8615-1b607926f314",
+            "name": "FR Phone Number",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
                 "property": "keyId",
                 "op": "MatchRegex",
-                "value": "^(\\+?33|0)[67]\\d{8}$"
+                "value": "^(\\\u002B?33|0)[67]\\d{8}$"
               }
             ],
             "variations": [
               {
-                "id": "a04b6251-bf4d-4868-a73d-e1d566b71cc9",
+                "id": "57348136-4c9a-4640-8156-e15931119e81",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           }
         ],
         "isEnabled": true,
-        "disabledVariationId": "73009a42-d427-4d28-802a-15c40722bd8c",
+        "disabledVariationId": "c4ed60ff-d195-415d-a657-3243286673b7",
         "fallthrough": {
+          "dispatchKey": null,
           "includedInExpt": true,
           "variations": [
             {
-              "id": "73009a42-d427-4d28-802a-15c40722bd8c",
+              "id": "c4ed60ff-d195-415d-a657-3243286673b7",
               "rollout": [
                 0,
                 1
               ],
-              "exptRollout": 0
+              "exptRollout": 1
             }
           ]
         },
         "exptIncludeAllTargets": true,
+        "tags": [],
         "isArchived": false,
-        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "createdAt": "2022-10-25T20:59:56.538Z",
-        "updatedAt": "2022-10-25T21:17:25.531934Z",
-        "id": "31f95f40-a97a-43ec-b856-af39015a0db1"
+        "disabledVariation": {
+          "id": "c4ed60ff-d195-415d-a657-3243286673b7",
+          "value": "others"
+        },
+        "creatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "updatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "createdAt": "2023-01-19T08:20:48.851Z",
+        "updatedAt": "2023-01-19T08:28:13.5801109Z",
+        "id": "b8f0b85a-e654-437d-a9df-af8f00898d7f"
       },
       {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
         "name": "ff-test-json",
         "key": "ff-test-json",
         "variationType": "json",
         "variations": [
           {
-            "id": "b4c3a257-759f-429a-9bb8-0f30244a4aa5",
-            "value": "{\n    \"code\": 200,\n    \"reason\": \"you win 100 euros\"\n}"
+            "id": "255ee1b9-0290-4ffe-98f8-06c4b66f3608",
+            "value": "{\n    \u0022code\u0022: 200,\n    \u0022reason\u0022: \u0022you win 100 euros\u0022\n}"
           },
           {
-            "id": "112a8d83-26df-4238-aadc-82836c671844",
-            "value": "{\n    \"code\": 404,\n    \"reason\": \"fail to win the lottery\"\n}"
+            "id": "0127cc87-99e2-4c46-98d9-5974a4fa1de1",
+            "value": "{\n    \u0022code\u0022: 404,\n    \u0022reason\u0022: \u0022fail to win the lottery\u0022\n}"
           }
         ],
-        "targetUsers": [
-          {
-            "keyIds": [],
-            "variationId": "b4c3a257-759f-429a-9bb8-0f30244a4aa5"
-          },
-          {
-            "keyIds": [],
-            "variationId": "112a8d83-26df-4238-aadc-82836c671844"
-          }
-        ],
+        "targetUsers": [],
         "rules": [],
         "isEnabled": true,
-        "disabledVariationId": "112a8d83-26df-4238-aadc-82836c671844",
+        "disabledVariationId": "0127cc87-99e2-4c46-98d9-5974a4fa1de1",
         "fallthrough": {
+          "dispatchKey": "name",
           "includedInExpt": true,
           "variations": [
             {
-              "id": "b4c3a257-759f-429a-9bb8-0f30244a4aa5",
+              "id": "255ee1b9-0290-4ffe-98f8-06c4b66f3608",
               "rollout": [
                 0,
                 0.25
               ],
-              "exptRollout": 0
+              "exptRollout": 1
             },
             {
-              "id": "112a8d83-26df-4238-aadc-82836c671844",
+              "id": "0127cc87-99e2-4c46-98d9-5974a4fa1de1",
               "rollout": [
                 0.25,
                 1
               ],
-              "exptRollout": 0
+              "exptRollout": 1
             }
           ]
         },
         "exptIncludeAllTargets": true,
+        "tags": [],
         "isArchived": false,
-        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "createdAt": "2022-10-25T21:18:27.175Z",
-        "updatedAt": "2022-10-25T21:31:05.4038972Z",
-        "id": "829845b2-300d-49e1-9c19-af39015f2338"
+        "disabledVariation": {
+          "id": "0127cc87-99e2-4c46-98d9-5974a4fa1de1",
+          "value": "{\n    \u0022code\u0022: 404,\n    \u0022reason\u0022: \u0022fail to win the lottery\u0022\n}"
+        },
+        "creatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "updatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "createdAt": "2023-01-19T08:31:58.919Z",
+        "updatedAt": "2023-01-19T08:34:54.9928114Z",
+        "id": "c55a0d3b-9045-481e-b529-af8f008c9ebb"
       },
       {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
+        "name": "ff-test-off",
+        "key": "ff-test-off",
+        "variationType": "boolean",
+        "variations": [
+          {
+            "id": "ab9488b1-c6d0-444d-ad29-8738f9a5f1a3",
+            "value": "true"
+          },
+          {
+            "id": "628ab219-b397-428b-84ce-a1734046c867",
+            "value": "false"
+          }
+        ],
+        "targetUsers": [],
+        "rules": [],
+        "isEnabled": false,
+        "disabledVariationId": "628ab219-b397-428b-84ce-a1734046c867",
+        "fallthrough": {
+          "dispatchKey": null,
+          "includedInExpt": true,
+          "variations": [
+            {
+              "id": "ab9488b1-c6d0-444d-ad29-8738f9a5f1a3",
+              "rollout": [
+                0,
+                1
+              ],
+              "exptRollout": 1
+            }
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "tags": [],
+        "isArchived": false,
+        "disabledVariation": {
+          "id": "628ab219-b397-428b-84ce-a1734046c867",
+          "value": "false"
+        },
+        "creatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "updatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "createdAt": "2023-01-19T08:39:51.3648568Z",
+        "updatedAt": "2023-01-19T08:39:51.3648568Z",
+        "id": "4aba499a-271a-4f53-9f15-af8f008ec861"
+      },
+      {
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
         "name": "ff-evaluation-test",
         "key": "ff-evaluation-test",
         "variationType": "string",
         "variations": [
           {
-            "id": "7605a908-e7ec-450a-a72c-c10ad9395509",
+            "id": "ac21c2fc-eec4-4b49-ad80-cc525720166b",
             "value": "teamA"
           },
           {
-            "id": "e0d36071-89a1-452e-a881-8b5684753289",
+            "id": "b70edce6-2b12-4b57-8a87-6ba54420bb02",
             "value": "teamB"
           },
           {
-            "id": "aef687c3-41d8-40db-8710-4c1f9bac6560",
+            "id": "6958a000-88d1-401f-be92-6b6e6aaa7bfa",
             "value": "teamC"
           },
           {
-            "id": "9253b858-c2b8-47cd-a056-14025959a1c5",
+            "id": "0918afd7-c0e3-4daf-af72-be62d8c92de0",
             "value": "teamD"
           },
           {
-            "id": "ef43195a-8874-44a0-aaef-f1d33c476799",
+            "id": "f4a00818-4fae-4ad5-ab3e-e711b079a4a5",
             "value": "teamE"
           },
           {
-            "id": "1b540abc-291f-4a4e-a129-19bf2101a6bc",
+            "id": "a71fa697-92d4-4155-b29a-7c40a6c8db03",
             "value": "teamF"
           },
           {
-            "id": "2b61a434-f29e-4913-9b4c-d22c7bf2c68d",
+            "id": "7d32d8c1-4447-4202-a954-f05ae0e8cdbc",
             "value": "teamG"
           },
           {
-            "id": "5a0fab50-c344-4b1e-b15f-c5bfae1d0087",
+            "id": "3fdfe1df-377a-4fed-9985-7518662b046a",
             "value": "teamH"
           },
           {
-            "id": "eacac1c1-190b-4822-897c-ec7867a4da85",
+            "id": "902c8713-bf46-4df8-b655-351713b8324f",
             "value": "teamI"
           }
         ],
         "targetUsers": [
           {
-            "keyIds": [],
-            "variationId": "7605a908-e7ec-450a-a72c-c10ad9395509"
-          },
-          {
             "keyIds": [
               "test-target-user"
             ],
-            "variationId": "e0d36071-89a1-452e-a881-8b5684753289"
-          },
-          {
-            "keyIds": [],
-            "variationId": "aef687c3-41d8-40db-8710-4c1f9bac6560"
-          },
-          {
-            "keyIds": [],
-            "variationId": "9253b858-c2b8-47cd-a056-14025959a1c5"
-          },
-          {
-            "keyIds": [],
-            "variationId": "ef43195a-8874-44a0-aaef-f1d33c476799"
-          },
-          {
-            "keyIds": [],
-            "variationId": "1b540abc-291f-4a4e-a129-19bf2101a6bc"
-          },
-          {
-            "keyIds": [],
-            "variationId": "2b61a434-f29e-4913-9b4c-d22c7bf2c68d"
-          },
-          {
-            "keyIds": [],
-            "variationId": "5a0fab50-c344-4b1e-b15f-c5bfae1d0087"
-          },
-          {
-            "keyIds": [],
-            "variationId": "eacac1c1-190b-4822-897c-ec7867a4da85"
+            "variationId": "b70edce6-2b12-4b57-8a87-6ba54420bb02"
           }
         ],
         "rules": [
           {
-            "id": "e01374f3-c2bc-4ddd-9130-b87c24462899",
-            "name": "Test True Rule",
+            "id": "d999869e-a287-414f-a13e-04accd03dc61",
+            "name": "True Rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -545,18 +545,19 @@
             ],
             "variations": [
               {
-                "id": "aef687c3-41d8-40db-8710-4c1f9bac6560",
+                "id": "6958a000-88d1-401f-be92-6b6e6aaa7bfa",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "dfb117f2-2fcc-46c8-a7da-f1bf8bdef438",
-            "name": "Test Equal Rule",
+            "id": "a8da5927-63ed-412b-8728-f950cc7f785e",
+            "name": "Equal Rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -567,18 +568,19 @@
             ],
             "variations": [
               {
-                "id": "9253b858-c2b8-47cd-a056-14025959a1c5",
+                "id": "0918afd7-c0e3-4daf-af72-be62d8c92de0",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "89bbebdb-39a6-4a61-8b52-91502de8a799",
-            "name": "Test Than Rule",
+            "id": "a1a217c0-d91f-4ea2-b45f-993444ef743c",
+            "name": "Than Rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -594,18 +596,19 @@
             ],
             "variations": [
               {
-                "id": "ef43195a-8874-44a0-aaef-f1d33c476799",
+                "id": "f4a00818-4fae-4ad5-ab3e-e711b079a4a5",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "f0fe243f-8f3a-4e30-9aa9-a5663ff5d455",
-            "name": "Test Contain Rule",
+            "id": "bfd4fca9-7131-4bcc-b7c2-c49c3146387c",
+            "name": "Contain Rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -616,40 +619,42 @@
             ],
             "variations": [
               {
-                "id": "1b540abc-291f-4a4e-a129-19bf2101a6bc",
+                "id": "a71fa697-92d4-4155-b29a-7c40a6c8db03",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "d1d7df63-4040-4a34-92a6-12755a1c327b",
-            "name": "Test IsOneOf Rule",
+            "id": "9abbd28c-088a-4d9c-8b68-7d1f4494b18f",
+            "name": "OneOf Rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
                 "property": "major",
                 "op": "IsOneOf",
-                "value": "[\"CS\",\"MATH\",\"PHYSICS\"]"
+                "value": "[\u0022CS\u0022,\u0022MATH\u0022,\u0022PHYSICS\u0022]"
               }
             ],
             "variations": [
               {
-                "id": "2b61a434-f29e-4913-9b4c-d22c7bf2c68d",
+                "id": "7d32d8c1-4447-4202-a954-f05ae0e8cdbc",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "b3e61368-da26-4783-8dda-f6c971323f03",
-            "name": "Test StartEnd Rule",
+            "id": "d9cd384c-6282-482d-a43d-5d4461068e18",
+            "name": "StartEnd Rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
@@ -665,45 +670,47 @@
             ],
             "variations": [
               {
-                "id": "5a0fab50-c344-4b1e-b15f-c5bfae1d0087",
+                "id": "3fdfe1df-377a-4fed-9985-7518662b046a",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           },
           {
-            "id": "15506c6d-3380-4019-9767-c14a142a652a",
-            "name": "Rule 7",
+            "id": "ecdc09b0-7aa0-485d-8498-990c8589c95c",
+            "name": "MatchRegex Rule",
+            "dispatchKey": null,
             "includedInExpt": false,
             "conditions": [
               {
                 "property": "phone",
                 "op": "MatchRegex",
-                "value": "^(\\+?0?86\\-?)?1[345789]\\d{9}$"
+                "value": "^(\\\u002B?0?86\\-?)?1[345789]\\d{9}$"
               }
             ],
             "variations": [
               {
-                "id": "eacac1c1-190b-4822-897c-ec7867a4da85",
+                "id": "902c8713-bf46-4df8-b655-351713b8324f",
                 "rollout": [
                   0,
                   1
                 ],
-                "exptRollout": 0
+                "exptRollout": 1
               }
             ]
           }
         ],
         "isEnabled": true,
-        "disabledVariationId": "7605a908-e7ec-450a-a72c-c10ad9395509",
+        "disabledVariationId": "ac21c2fc-eec4-4b49-ad80-cc525720166b",
         "fallthrough": {
+          "dispatchKey": null,
           "includedInExpt": true,
           "variations": [
             {
-              "id": "7605a908-e7ec-450a-a72c-c10ad9395509",
+              "id": "ac21c2fc-eec4-4b49-ad80-cc525720166b",
               "rollout": [
                 0,
                 1
@@ -713,66 +720,22 @@
           ]
         },
         "exptIncludeAllTargets": true,
+        "tags": [],
         "isArchived": false,
-        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "createdAt": "2022-11-05T19:25:34.102Z",
-        "updatedAt": "2022-11-05T21:18:40.1500633Z",
-        "id": "5e8e5c37-9d69-432f-80ba-af4401402207"
-      },
-      {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
-        "name": "ff-test-off",
-        "key": "ff-test-off",
-        "variationType": "boolean",
-        "variations": [
-          {
-            "id": "bf2ba738-0e1e-489e-89a4-d349bfe7a51f",
-            "value": "true"
-          },
-          {
-            "id": "675dfd98-5d02-4d9b-8f12-84a717c6479f",
-            "value": "false"
-          }
-        ],
-        "targetUsers": [
-          {
-            "keyIds": [],
-            "variationId": "bf2ba738-0e1e-489e-89a4-d349bfe7a51f"
-          },
-          {
-            "keyIds": [],
-            "variationId": "675dfd98-5d02-4d9b-8f12-84a717c6479f"
-          }
-        ],
-        "rules": [],
-        "isEnabled": false,
-        "disabledVariationId": "675dfd98-5d02-4d9b-8f12-84a717c6479f",
-        "fallthrough": {
-          "includedInExpt": true,
-          "variations": [
-            {
-              "id": "bf2ba738-0e1e-489e-89a4-d349bfe7a51f",
-              "rollout": [
-                0,
-                1
-              ],
-              "exptRollout": 1
-            }
-          ]
+        "disabledVariation": {
+          "id": "ac21c2fc-eec4-4b49-ad80-cc525720166b",
+          "value": "teamA"
         },
-        "exptIncludeAllTargets": true,
-        "isArchived": false,
-        "creatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "updatorId": "4526975f-4f6b-4420-9dde-84c276148832",
-        "createdAt": "2022-10-27T13:29:50.696Z",
-        "updatedAt": "2022-11-05T21:30:28.7248857Z",
-        "id": "f682adb3-b041-4795-a114-af3b00de6e3c"
+        "creatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "updatorId": "a74cf89d-b855-492a-a3d7-9a8cd6d852aa",
+        "createdAt": "2023-01-19T09:01:40.163Z",
+        "updatedAt": "2023-01-19T09:18:47.6291759Z",
+        "id": "875491ec-a958-4410-b8dd-af8f0094c620"
       }
     ],
     "segments": [
       {
-        "envId": "fae873f1-fa02-4b13-b073-8771c7309655",
+        "envId": "41e260d6-83e3-4cfe-943e-ef6cd83401bb",
         "name": "team-seg",
         "description": "test segment",
         "included": [
@@ -783,21 +746,21 @@
         ],
         "rules": [
           {
-            "id": "0a693f94-befd-4b2a-8f6a-bbeac5344d9b",
-            "name": "规则 1",
+            "id": "a6b06226-36dc-4563-81a6-e94f41da6d0e",
+            "name": "Rule 1",
             "conditions": [
               {
                 "property": "major",
                 "op": "IsOneOf",
-                "value": "[\"math\",\"cs\"]"
+                "value": "[\u0022math\u0022,\u0022cs\u0022]"
               }
             ]
           }
         ],
         "isArchived": false,
-        "createdAt": "2022-10-25T20:46:47.436Z",
-        "updatedAt": "2022-10-25T20:50:06.603475Z",
-        "id": "a3ad3010-3bfa-415f-a49a-af39015670f7"
+        "createdAt": "2023-01-19T03:39:12.21Z",
+        "updatedAt": "2023-01-19T03:44:54.4254898Z",
+        "id": "a0832b1c-fe73-479f-9a30-af8f003c34bf"
       }
     ]
   }
