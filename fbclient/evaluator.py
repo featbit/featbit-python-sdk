@@ -1,7 +1,6 @@
-import base64
 import json
 import re
-from typing import Callable, Iterable, Optional
+from typing import Callable, Optional
 
 from fbclient.common_types import FBEvent, FBUser, _EvalResult
 from fbclient.event_types import FlagEventVariation
@@ -67,6 +66,8 @@ __IS_IN_SEGMENT_CLAUSE__ = 'User is in segment'
 
 __NOT_IN_SEGMENT_CLAUSE__ = 'User is not in segment'
 
+__EXPT_KEY_PREFIX__ = "expt"
+
 
 class Evaluator:
     def __init__(self,
@@ -127,11 +128,9 @@ class Evaluator:
         for rule in flag['rules']:
             if self._match_any_rule(user, rule):
                 return self._get_rollout_variation_option(flag,
-                                                          rule['variations'],
+                                                          rule,
                                                           user,
                                                           REASON_RULE_MATCH,
-                                                          flag['exptIncludeAllTargets'],
-                                                          rule['includedInExpt'],
                                                           flag['key'],
                                                           flag['name'])
         return None
@@ -139,11 +138,9 @@ class Evaluator:
     # get value from default rule
     def _match_default_user_variation(self, flag: dict, user: FBUser) -> Optional[_EvalResult]:
         return self._get_rollout_variation_option(flag,
-                                                  flag['fallthrough']['variations'],
+                                                  flag['fallthrough'],
                                                   user,
                                                   REASON_FALLTHROUGH,
-                                                  flag['exptIncludeAllTargets'],
-                                                  flag['fallthrough']['includedInExpt'],
                                                   flag['key'],
                                                   flag['name'])
 
@@ -264,15 +261,13 @@ class Evaluator:
 
     def _get_rollout_variation_option(self,
                                       flag: dict,
-                                      rollouts: Iterable[dict],
+                                      rollout_variations: dict,
                                       user: FBUser,
                                       reason: str,
-                                      expt_include_all_targets: bool,
-                                      rule_inclued_in_expt: bool,
                                       key_name: str,
                                       name: str) -> Optional[_EvalResult]:
 
-        def is_send_to_expt(user_key: str,
+        def is_send_to_expt(dispatch_key: str,
                             rollout: dict,
                             expt_include_all_targets: bool,
                             rule_inclued_in_expt: bool) -> bool:
@@ -288,14 +283,15 @@ class Evaluator:
                 upper_bound = send_to_expt_percentage / splitting_percentage
                 if upper_bound > 1:
                     upper_bound = 1
-                new_user_key = base64.b64encode(user_key.encode()).decode()
-                return VariationSplittingAlgorithm(new_user_key, [0, upper_bound]).is_key_belongs_to_percentage()
+                new_dispatch_key = "".join((__EXPT_KEY_PREFIX__, dispatch_key))
+                return VariationSplittingAlgorithm(new_dispatch_key, [0, upper_bound]).is_key_belongs_to_percentage()
             return False
 
-        user_key = user.get('keyid')
-        for rollout in rollouts:
-            if VariationSplittingAlgorithm(user_key, rollout['rollout']).is_key_belongs_to_percentage():  # type: ignore
-                send_to_expt = is_send_to_expt(user_key, rollout, expt_include_all_targets, rule_inclued_in_expt)  # type: ignore
+        dispatch_key = rollout_variations.get('dispatchKey', 'keyid')
+        dispatch_key_value = "".join((flag['key'], user.get(dispatch_key)))  # type: ignore
+        for rollout in rollout_variations['variations']:
+            if VariationSplittingAlgorithm(dispatch_key_value, rollout['rollout']).is_key_belongs_to_percentage():  # type: ignore
+                send_to_expt = is_send_to_expt(dispatch_key_value, rollout, flag['exptIncludeAllTargets'], rollout_variations['includedInExpt'])  # type: ignore
                 return _EvalResult(rollout['id'],
                                    flag['variationMap'][rollout['id']],
                                    reason,
