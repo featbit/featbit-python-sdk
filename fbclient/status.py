@@ -9,7 +9,7 @@ from fbclient.status_types import (DATA_STORAGE_INIT_ERROR,
 from fbclient.utils import log
 
 
-class DataUpdateStatusProviderIml(DataUpdateStatusProvider):
+class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
 
     def __init__(self, storage: DataStorage):
         self.__storage = storage

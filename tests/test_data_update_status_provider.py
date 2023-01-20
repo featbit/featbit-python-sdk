@@ -6,7 +6,7 @@ import pytest
 
 from fbclient.category import DATATEST
 from fbclient.data_storage import InMemoryDataStorage
-from fbclient.status import DataUpdateStatusProviderIml
+from fbclient.status import DataUpdateStatusProviderImpl
 from fbclient.status_types import State, StateType
 
 
@@ -26,7 +26,7 @@ def data_storage():
 
 @pytest.fixture
 def data_updator(data_storage):
-    return DataUpdateStatusProviderIml(data_storage)
+    return DataUpdateStatusProviderImpl(data_storage)
 
 
 def test_init_data_storage(data_updator, data_storage, items):
