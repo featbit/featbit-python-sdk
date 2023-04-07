@@ -1,10 +1,10 @@
 import json
 import threading
-from distutils.util import strtobool
 from typing import Any, Mapping, Optional, Tuple
 
 from fbclient.category import FEATURE_FLAGS, SEGMENTS
-from fbclient.common_types import AllFlagStates, FBUser, FlagState, _EvalResult
+from fbclient.common_types import (AllFlagStates, EvalDetail, FBUser,
+                                   _EvalResult)
 from fbclient.config import Config
 from fbclient.data_storage import NullDataStorage
 from fbclient.evaluator import (REASON_CLIENT_NOT_READY, REASON_ERROR,
@@ -211,51 +211,39 @@ class FBClient:
 
         This method will send an event back to feature flag center immediately if no error occurs.
 
+        The default value should be a string, boolean, numeric, or json type.
+
         The result of the flag evaluation will be converted to:
         1: string if the feature flag is a string type
         2: bool if the feature flag is a boolean type
-        3: Python object if the feature flag is a json type
-        4: float/int if the feature flag is a numeric type
+        3: float/int if the feature flag is a numeric type
+        4: Mapping or Iterable of any string, bool, float/int, or Mapping, if the feature flag is a json type
 
         :param key: the unique key for the feature flag
         :param user:  the attributes of the user
         :param default: the default value of the flag, to be used if the return value is not available
-        :return: one of the flag's values in any type in any type of string, bool, json(Python object), and float
+        :return: one of the flag's values in any type in any type of string, bool, float, json
         or the default value if flag evaluation fails
+        :raises: ValueError if the default is not a string, boolean, numeric, or json type
         """
         er = self._evaluate_internal(key, user, default)
         return cast_variation_by_flag_type(er.flag_type, er.value)
 
-    def variation_detail(self, key: str, user: dict, default: Any = None) -> FlagState:
+    def variation_detail(self, key: str, user: dict, default: Any = None) -> EvalDetail:
         """"Return the variation of a feature flag for a given user, but also provides additional information
-         about how this value was calculated, in the property `data` of the :class:`fbclient.common_types.FlagState`.
+         about how this value was calculated, in the property `data` of the :class:`fbclient.common_types.EvalDetail`.
 
         This method will send an event back to feature flag center immediately if no error occurs.
+
+        The default value should be a string, boolean, numeric, or json type.
 
         :param key: the unique key for the feature flag
         :param user: the attributes of the user
         :param default: the default value of the flag, to be used if the return value is not available
-        :return: an :class:`fbclient.common_types.FlagState` object
+        :return: an :class:`fbclient.common_types.EvalDetail` object
+        :raises: ValueError if the default is not a string, boolean, numeric, or json type
         """
-        return self._evaluate_internal(key, user, default).to_flag_state
-
-    def is_enabled(self, key: str, user: dict) -> bool:
-        """
-        Return the bool value for a feature flag for a given user. it's strongly recommended to call this method
-        only in a bool feature flag, otherwise the results may not be what you expect
-
-        This method will send an event back to feature flag center immediately if no error occurs.
-
-        :param key: the unique key for the feature flag
-        :param user: the attributes of the user
-        :return: True or False
-
-        """
-        try:
-            value = self.variation(key, user, False)
-            return bool(strtobool(str(value)))
-        except ValueError:
-            return False
+        return self._evaluate_internal(key, user, default).to_evail_detail
 
     def get_all_latest_flag_variations(self, user: dict) -> AllFlagStates:
         """
@@ -268,12 +256,12 @@ class FBClient:
         if SDK has not been initialized or the user invalid)
         """
         all_flag_details = {}
-        message = ""
+        reason = ""
         success = True
         try:
             if not self.initialize:
                 log.warning('FB Python SDK: Evaluation called before Java SDK client initialized for feature flag')
-                message = REASON_CLIENT_NOT_READY
+                reason = REASON_CLIENT_NOT_READY
                 success = False
             else:
                 try:
@@ -285,15 +273,15 @@ class FBClient:
                         all_flag_details[er.to_evail_detail] = fb_event
                 except ValueError as ve:
                     log.warning('FB Python SDK: %s' % str(ve))
-                    message = REASON_USER_NOT_SPECIFIED
+                    reason = REASON_USER_NOT_SPECIFIED
                     success = False
                 except:
                     raise
         except Exception as e:
             log.exception('FB Python SDK: unexpected error in evaluation: %s' % str(e))
-            message = REASON_ERROR
+            reason = REASON_ERROR
             success = False
-        return AllFlagStates(success, message, all_flag_details, self._event_handler)
+        return AllFlagStates(success, reason, all_flag_details, self._event_handler)
 
     def is_flag_known(self, key: str) -> bool:
         """
