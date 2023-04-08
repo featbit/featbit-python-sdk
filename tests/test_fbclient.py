@@ -213,8 +213,8 @@ def test_variation_argument_error():
         detail = client.variation_detail("ff-not-existed", USER_1, False)
         assert detail.variation is False
         assert detail.reason == REASON_FLAG_NOT_FOUND
-        detail = client.variation_detail("ff-test-bool", None, False)  # type: ignore
-        assert detail.variation is False
+        detail = client.variation_detail("ff-test-bool", None, None)  # type: ignore
+        assert detail.variation is None
         assert detail.reason == REASON_USER_NOT_SPECIFIED
         all_states = client.get_all_latest_flag_variations(None)  # type: ignore
         assert all_states.success is False

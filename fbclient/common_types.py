@@ -215,7 +215,7 @@ class AllFlagStates(BasicFlagState, Jsonfy):
         self._data = dict((ed.key_name, (ed, fb_event)) for ed, fb_event in data.items()) if data else {}
         self._event_handler = event_handler
 
-    def get(self, key_name: str, default: Any) -> EvalDetail:
+    def get(self, key_name: str, default: Any = None) -> EvalDetail:
         """Return the flag evaluation details of a given feature flag key
 
         This method will send event to back to feature flag center immediately
