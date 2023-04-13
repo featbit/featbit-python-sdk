@@ -20,7 +20,7 @@ If you want to use your own data source, see [Offline Mode](#offline-mode).
 ### Installation
 install the sdk in using pip, this version of the SDK is compatible with Python 3.6 through 3.11.
 
-```
+```shell
 pip install fb-python-sdk
 ```
 
