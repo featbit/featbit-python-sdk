@@ -1,14 +1,10 @@
-# FeatBit python sdk
+# FeatBit Server-Side SDK for Python
 
 ## Introduction
 
-This is the Python Server-Side SDK for the 100% open-source feature flags management
-platform [FeatBit](https://github.com/featbit/featbit). It is intended for use in a multiple-users python server applications.
+This is the Python Server-Side SDK for the 100% open-source feature flags management platform [FeatBit](https://github.com/featbit/featbit).
 
-This SDK has two main purposes:
-
-- Store the available feature flags and evaluate the feature flags by given user in the server side SDK
-- Sends feature flags usage, and custom events for the insights and A/B/n testing.
+The FeatBit Server-Side SDK for Python is designed primarily for use in multi-user systems such as web servers and applications.
 
 ## Data synchonization
 
@@ -17,7 +13,7 @@ default. Whenever there is any change to a feature flag or its related data, thi
 the average synchronization time is less than 100 ms. Be aware the websocket connection may be interrupted due to
 internet outage, but it will be resumed automatically once the problem is gone.
 
-If you want to use your own data source, see [Offline](#offline).
+If you want to use your own data source, see [Offline Mode](#offline-mode).
 
 ## Get Started
 
@@ -28,7 +24,11 @@ install the sdk in using pip, this version of the SDK is compatible with Python 
 pip install fb-python-sdk
 ```
 
-### Basic usage
+### Quick Start
+
+> Note that the _**env_secret**_, _**streaming_url**_ and _**event_url**_ are required to initialize the SDK.
+
+The following code demonstrates basic usage of the SDK.
 
 ```python
 from fbclient import get, set_config
@@ -43,17 +43,15 @@ client = get()
 
 if client.initialize:
     flag_key = '<replace-with-your-flag-key>'
-    user_key = '<replace-with-your-user-key>'
-    user_name = '<replace-with-your-user-name>'
+    user_key = 'bot-id'
+    user_name = 'bot'
     user = {'key': user_key, 'name': user_name}
     detail = client.variation_detail(flag_key, user, default=None)
-    print(f'flag {flag_key} returns {detail.value} for user {user_key}')
-    print(f'Reason Description: {detail.reason}')
+    print(f'flag {flag_key} returns {detail.value} for user {user_key}, reason: {detail.reason}')
 
-# should close the client when you don't need it anymore
+# ensure that the SDK shuts down cleanly and has a chance to deliver events to FeatBit before the program exits
 client.stop()
 ```
-Note that the _**env_secret**_, _**streaming_url**_ and _**event_url**_ are required to initialize the SDK.
 
 ### Examples
 
@@ -61,17 +59,17 @@ Note that the _**env_secret**_, _**streaming_url**_ and _**event_url**_ are requ
 
 ### FBClient
 
-Applications SHOULD instantiate a single instance for the lifetime of the application. In the case where an application
+Applications **SHOULD instantiate a single FBClient instance** for the lifetime of the application. In the case where an application
 needs to evaluate feature flags from different environments, you may create multiple clients, but they should still be
 retained for the lifetime of the application rather than created per request or per thread.
 
-### Bootstrapping
+#### Bootstrapping
 
-The bootstrapping is in fact the call of constructor of `FFCClient`, in which the SDK will be initialized and connect to feature flag center
+The bootstrapping is in fact the call of constructor of `FBClient`, in which the SDK will be initialized and connect to feature flag center.
 
 The constructor will return when it successfully connects, or when the timeout(default: 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout elapses, you will receive the client in an uninitialized state where feature flags will return default values; it will still continue trying to connect in the background unless there has been a network error or you close the client(using `stop()`). You can detect whether initialization has succeeded by calling `initialize()`.
 
-The best way to use the SDK as a singleton, first make sure you have called `fbclient.set_config()` at startup time. Then `fbclient.get()` will return the same shared `fbclient.client.FFCClient` instance each time. The client will be initialized if it runs first time.
+The best way to use the SDK as a singleton, first make sure you have called `fbclient.set_config()` at startup time. Then `fbclient.get()` will return the same shared `fbclient.client.FBClient` instance each time. The client will be initialized if it runs first time.
 ```python
 from fbclient.config import Config
 from fbclient import get, set_config 
@@ -80,8 +78,7 @@ set_config(Config(env_secret, event_url, streaming_url))
 client = get()
 
 if client.initialize:
-    # your code
-
+    # the client is ready
 ```
 You can also manage your `fbclient.client.FBClient`, the SDK will be initialized if you call `fbclient.client.FBClient` constructor. With constructor, you can set the timeout for initialization, the default value is 15 seconds.
 ```python
@@ -91,8 +88,7 @@ from fbclient.client import FBClient
 client = FBClient(Config(env_secret, event_url, streaming_url), start_wait=15)
 
 if client.initialize:
-    # your code
-
+    # the client is ready
 ```
 If you prefer to have the constructor return immediately, and then wait for initialization to finish at some other point, you can use `fbclient.client.fbclient.update_status_provider` object, which provides an asynchronous way, as follows:
 
@@ -100,37 +96,11 @@ If you prefer to have the constructor return immediately, and then wait for init
 from fbclient.config import Config
 from fbclient.client import FBClient
 
-client = FFCClient(Config(env_secret), start_wait=0)
+client = FBClient(Config(env_secret), start_wait=0)
 if client.update_status_provider.wait_for_OKState():
-    # your code
-
+    # the client is ready
 ```
 
-### Offline
-
-In the offline mode, SDK DOES not exchange any data with feature flag center, this mode is only use for internal test for instance.
-
-To open the offline mode:
-```python
-config = Config(env_secret, event_url, streaming_url, offline=True)
-```
-When you put the SDK in offline mode, no insight message is sent to the server and all feature flag evaluations return
-fallback values because there are no feature flags or segments available. If you want to use your own data source,
-SDK allows users to populate feature flags and segments data from a JSON string.
-
-Here is an example: [fbclient_test_data.json](tests/fbclient_test_data.json).
-
-```shell
-# replace http://localhost:5100 with your evaluation server url
-curl -H "Authorization: <your-env-secret>" http://localhost:5100/api/public/sdk/server/latest-all > featbit-bootstrap.json
-```
-
-Then you can use this file to initialize the SDK in offline mode:
-
-```python
-// first load data from file and then
-client.initialize_from_external_json(json)
-```
 ### FBUser
 
 `User`: A dictionary of attributes that can affect flag evaluation, usually corresponding to a user of your application.
@@ -166,6 +136,32 @@ if client.initialize:
     
 ```
 
+### Offline Mode
+
+In the offline mode, SDK DOES not exchange any data with feature flag center, this mode is only use for internal test for instance.
+
+To open the offline mode:
+```python
+config = Config(env_secret, event_url, streaming_url, offline=True)
+```
+When you put the SDK in offline mode, no insight message is sent to the server and all feature flag evaluations return
+fallback values because there are no feature flags or segments available. If you want to use your own data source,
+SDK allows users to populate feature flags and segments data from a JSON string.
+
+Here is an example: [fbclient_test_data.json](tests/fbclient_test_data.json).
+
+```shell
+# replace http://localhost:5100 with your evaluation server url
+curl -H "Authorization: <your-env-secret>" http://localhost:5100/api/public/sdk/server/latest-all > featbit-bootstrap.json
+```
+
+Then you can use this file to initialize the SDK in offline mode:
+
+```python
+// first load data from file and then
+client.initialize_from_external_json(json)
+```
+
 ### Experiments (A/B/n Testing)
 We support automatic experiments for pageviews and clicks, you just need to set your experiment on our SaaS platform, then you should be able to see the result in near real time after the experiment is started.
 
@@ -183,7 +179,7 @@ otherwise, the custom event may not be included into the experiment result.
 - If you have a specific question about using this sdk, we encourage you
   to [ask it in our slack](https://join.slack.com/t/featbit/shared_invite/zt-1ew5e2vbb-x6Apan1xZOaYMnFzqZkGNQ).
 - If you encounter a bug or would like to request a
-  feature, [submit an issue](https://github.com/featbit/dotnet-server-sdk/issues/new).
+  feature, [submit an issue](https://github.com/featbit/featbit-python-sdk/issues/new).
 
 ## See Also
 - [Connect To Python Sdk](https://docs.featbit.co/docs/getting-started/4.-connect-an-sdk/server-side-sdks/python-sdk)
