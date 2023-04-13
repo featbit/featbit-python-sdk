@@ -65,7 +65,7 @@ retained for the lifetime of the application rather than created per request or 
 
 #### Bootstrapping
 
-The bootstrapping is in fact the call of constructor of `FBClient`, in which the SDK will be initialized and connect to feature flag center.
+The bootstrapping is in fact the call of constructor of `FBClient`, in which the SDK will be initialized and connect to FeatBit.
 
 The constructor will return when it successfully connects, or when the timeout(default: 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout elapses, you will receive the client in an uninitialized state where feature flags will return default values; it will still continue trying to connect in the background unless there has been a network error or you close the client(using `stop()`). You can detect whether initialization has succeeded by calling `initialize()`.
 
@@ -103,7 +103,7 @@ if client.update_status_provider.wait_for_OKState():
 
 ### FBUser
 
-`User`: A dictionary of attributes that can affect flag evaluation, usually corresponding to a user of your application.
+A dictionary of attributes that can affect flag evaluation, usually corresponding to a user of your application.
 This object contains built-in properties(`key`, `name`). The `key` and `name` are required. The `key` must uniquely identify each user; this could be a username or email address for authenticated users, or a ID for anonymous users. The `name` is used to search your user quickly. You may also define custom properties with arbitrary names and values.
 For instance, the custom key should be a string; the custom value should be a string, number or boolean value
 
@@ -122,8 +122,8 @@ if client.initialize:
     flag_value = client.variation(flag_key, user, default_value)
     # evaluate the flag value and get the detail
     detail = client.variation_detail(flag_key, user, default=None)
-
 ```
+
 If evaluation called before SDK client initialized or you set the wrong flag key or user for the evaluation, SDK will return the default value you set. The `fbclient.common_types.EvalDetail` will explain the details of the last evaluation including error raison.
 
 If you would like to get variations of all feature flags in a special environment, you can use `fbclient.client.FBClient.get_all_latest_flag_variations`, SDK will return `fbclient.common_types.AllFlagStates`, that explain the details of all feature flags. `fbclient.common_types.AllFlagStates.get()` returns the detail of a given feature flag key.
@@ -133,22 +133,20 @@ if client.initialize:
     user = {'key': user_key, 'name': user_name}
     all_flag_values = client.get_all_latest_flag_variations(user)
     detail = all_flag_values.get(flag_key, default=None)
-    
 ```
 
 ### Offline Mode
 
-In the offline mode, SDK DOES not exchange any data with feature flag center, this mode is only use for internal test for instance.
+In some situations, you might want to stop making remote calls to FeatBit. Here is how:
 
-To open the offline mode:
 ```python
 config = Config(env_secret, event_url, streaming_url, offline=True)
 ```
 When you put the SDK in offline mode, no insight message is sent to the server and all feature flag evaluations return
 fallback values because there are no feature flags or segments available. If you want to use your own data source,
-SDK allows users to populate feature flags and segments data from a JSON string.
+SDK allows users to populate feature flags and segments data from a JSON string. Here is an example: [fbclient_test_data.json](tests/fbclient_test_data.json).
 
-Here is an example: [fbclient_test_data.json](tests/fbclient_test_data.json).
+The format of the data in flags and segments is defined by FeatBit and is subject to change. Rather than trying to construct these objects yourself, it's simpler to request existing flags directly from the FeatBit server in JSON format and use this output as the starting point for your file. Here's how:
 
 ```shell
 # replace http://localhost:5100 with your evaluation server url
