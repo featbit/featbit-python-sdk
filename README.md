@@ -101,6 +101,9 @@ if client.update_status_provider.wait_for_OKState():
     # the client is ready
 ```
 
+It's possible to set a timeout in seconds for the `wait_for_OKState` method. If the timeout is reached, the method will return `False` and the client will still be in an uninitialized state. If you do not specify a timeout, the method will wait indefinitely.
+
+
 > To check if the client is ready is optional. Even if the client is not ready, you can still evaluate feature flags, but the default value will be returned if SDK is not yet initialized.
 
 ### FBUser
