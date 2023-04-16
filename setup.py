@@ -50,10 +50,11 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
     extras_require={
         "dev": dev_reqs
     },
     tests_require=dev_reqs,
-    python_requires='>=3.6, <=3.10'
+    python_requires='>=3.6, <=3.11'
 )

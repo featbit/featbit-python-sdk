@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional
+from typing import Any, Callable, Dict, Mapping, Optional
 
 from fbclient.utils import cast_variation_by_flag_type, is_numeric
 
@@ -10,11 +10,11 @@ __BUILTINS_MAPING__ = {'key': 'keyid',
 
 __NO_VARIATION__ = 'NE'
 
+__FLAG_NOT_FOUND__ = 'flag not found'
+
 __FLAG_KEY_UNKNOWN__ = 'flag key unknown'
 
 __FLAG_NAME_UNKNOWN__ = 'flag name unknown'
-
-__FLAG_VALUE_UNKNOWN__ = 'flag value unknown'
 
 
 class Jsonfy(ABC):
@@ -142,14 +142,14 @@ class BasicFlagState:
     """Abstract class representing flag state after feature flag evaluaion
     """
 
-    def __init__(self, success: bool, message: str):
+    def __init__(self, success: bool, reason: str):
         """Constructs an instance.
 
         :param success: True if successful
-        :param message: the state of last evaluation; the value is OK if successful
+        :param reason: the state of last evaluation; the value is OK if successful
         """
         self._success = success
-        self._message = 'OK' if success else message
+        self._reason = 'OK' if success else reason
 
     @property
     def success(self) -> bool:
@@ -158,10 +158,10 @@ class BasicFlagState:
         return self._success
 
     @property
-    def message(self) -> str:
-        """Message representing the state of last evaluation; the value is OK if successful
+    def reason(self) -> str:
+        """reason the state of last evaluation; the value is OK if successful
         """
-        return self._message
+        return self._reason
 
 
 class FlagState(BasicFlagState, Jsonfy):
@@ -175,14 +175,14 @@ class FlagState(BasicFlagState, Jsonfy):
         4: float/int if the feature flag is a numeric type
     """
 
-    def __init__(self, success: bool, message: str, data: EvalDetail):
+    def __init__(self, success: bool, reason: str, data: EvalDetail):
         """Constructs an instance.
 
         :param success: True if successful
-        :param message: the state of last evaluation; the value is OK if successful
+        :param reason: the state of last evaluation; the value is OK if successful
         :param data: the result of a flag evaluation with information about how it was calculated
         """
-        super().__init__(success, message)
+        super().__init__(success, reason)
         self._data = data
 
     @property
@@ -192,7 +192,7 @@ class FlagState(BasicFlagState, Jsonfy):
 
     def to_json_dict(self) -> dict:
         return {'success': self.success,
-                'message': self.message,
+                'reason': self.reason,
                 'data': self._data.to_json_dict() if self._data else None}
 
 
@@ -201,30 +201,26 @@ class AllFlagStates(BasicFlagState, Jsonfy):
     :func:`get(key_name)` to get the state for a given feature flag key
     """
 
-    def __init__(self, success: bool, message: str,
+    def __init__(self, success: bool, reason: str,
                  data: Mapping[EvalDetail, "FBEvent"],
                  event_handler: Callable[["FBEvent"], None]):
         """Constructs an instance.
 
         :param success: True if successful
-        :param message: the state of last evaluation; the value is OK if successful
-        :param data: a dictionary containing state of all feature flags and their events
+        :param reason: the state of last evaluation; the value is OK if successful
+        :param data: a dictionary containing latest evaluation of all feature flags and their events
         :event_handler: callback function used to send events to feature flag center
         """
-        super().__init__(success, message)
+        super().__init__(success, reason)
         self._data = dict((ed.key_name, (ed, fb_event)) for ed, fb_event in data.items()) if data else {}
         self._event_handler = event_handler
 
-    @property
-    def key_names(self) -> Iterable[Optional[str]]:
-        """Return key names of all feature flag
-        """
-        return self._data.keys()
-
-    def get(self, key_name: str) -> Optional[EvalDetail]:
+    def get(self, key_name: str, default: Any = None) -> EvalDetail:
         """Return the flag evaluation details of a given feature flag key
 
         This method will send event to back to feature flag center immediately
+
+        The default value should be a string, boolean, numeric, or json type.
 
         :param key_name: key name of the flag
         :return: an :class:`fbclient.common_types.EvalDetail` object
@@ -232,11 +228,14 @@ class AllFlagStates(BasicFlagState, Jsonfy):
         ed, fb_event = self._data.get(key_name, (None, False))
         if self._event_handler and fb_event:
             self._event_handler(fb_event)
-        return ed
+        return ed if ed is not None else EvalDetail(reason=__FLAG_NOT_FOUND__,
+                                                    variation=default,
+                                                    key_name=key_name,
+                                                    name=__FLAG_NAME_UNKNOWN__)
 
     def to_json_dict(self) -> dict:
         return {'success': self.success,
-                'message': self.message,
+                'message': self.reason,
                 'data': [ed.to_json_dict() for ed, _ in self._data.values()] if self._data else []}
 
 

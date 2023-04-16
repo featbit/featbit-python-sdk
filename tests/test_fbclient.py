@@ -1,5 +1,7 @@
 import base64
+from datetime import datetime
 from pathlib import Path
+from time import sleep
 from unittest.mock import patch
 
 import pytest
@@ -97,6 +99,8 @@ def test_start_and_nowait(mock_start_method):
         pass
     mock_start_method.side_effect = start
     with make_fb_client(NullUpdateProcessor, NullEventProcessor, start_wait=0) as client:
+        assert not client.initialize
+        sleep(0.1)
         assert not client.update_status_provider.wait_for_OKState(timeout=0.1)
 
 
@@ -107,59 +111,54 @@ def test_variation_when_client_not_initialized(mock_start_method):
     mock_start_method.side_effect = start
     with make_fb_client(NullUpdateProcessor, NullEventProcessor, start_wait=0.1) as client:
         assert not client.initialize
-        flag_state = client.variation_detail("ff-test-bool", USER_1, False)
-        assert not flag_state.success
-        assert not flag_state.data.variation
-        assert flag_state.data.reason == REASON_CLIENT_NOT_READY
+        detail = client.variation_detail("ff-test-bool", USER_1, False)
+        assert detail.variation is False
+        assert detail.reason == REASON_CLIENT_NOT_READY
         all_states = client.get_all_latest_flag_variations(USER_1)  # type: ignore
         assert not all_states.success
-        assert all_states.message == REASON_CLIENT_NOT_READY
+        assert all_states.reason == REASON_CLIENT_NOT_READY
+        detail = all_states.get("ff-test-bool", False)
+        assert detail.variation is False
+        assert detail.reason == REASON_FLAG_NOT_FOUND
 
 
 def test_bool_variation():
     with make_fb_client_offline() as client:
         assert client.initialize
-        assert client.is_enabled("ff-test-bool", USER_1)
-        assert client.variation("ff-test-bool", USER_1, False)
-        flag_state = client.variation_detail("ff-test-bool", USER_2, False)
-        assert flag_state.success
-        assert flag_state.data.variation
-        assert flag_state.data.reason == REASON_TARGET_MATCH
-        assert not client.is_enabled("ff-test-bool", USER_3)
-        flag_state = client.variation_detail("ff-test-bool", USER_4, False)
-        assert flag_state.success
-        assert flag_state.data.variation
-        assert flag_state.data.reason == REASON_FALLTHROUGH
+        assert client.variation("ff-test-bool", USER_1, False) is True
+        detail = client.variation_detail("ff-test-bool", USER_2, False)
+        assert detail.variation is True
+        assert detail.reason == REASON_TARGET_MATCH
+        assert client.variation("ff-test-bool", USER_3, False) is False
+        detail = client.variation_detail("ff-test-bool", USER_4, False)
+        assert detail.variation is True
+        assert detail.reason == REASON_FALLTHROUGH
 
 
 def test_numeric_variation():
     with make_fb_client_offline() as client:
         assert client.initialize
         assert client.variation("ff-test-number", USER_1, -1) == 1
-        flag_state = client.variation_detail("ff-test-number", USER_2, -1)
-        assert flag_state.success
-        assert flag_state.data.variation == 33
-        assert flag_state.data.reason == REASON_RULE_MATCH
+        detail = client.variation_detail("ff-test-number", USER_2, -1)
+        assert detail.variation == 33
+        assert detail.reason == REASON_RULE_MATCH
         assert client.variation("ff-test-number", USER_3, -1) == 86
-        flag_state = client.variation_detail("ff-test-number", USER_4, -1)
-        assert flag_state.success
-        assert flag_state.data.variation == 9999
-        assert flag_state.data.reason == REASON_FALLTHROUGH
+        detail = client.variation_detail("ff-test-number", USER_4, -1)
+        assert detail.variation == 9999
+        assert detail.reason == REASON_FALLTHROUGH
 
 
 def test_string_variation():
     with make_fb_client_offline() as client:
         assert client.initialize
         assert client.variation("ff-test-string", USER_CN_PHONE_NUM, 'error') == 'phone number'
-        flag_state = client.variation_detail("ff-test-string", USER_FR_PHONE_NUM, 'error')
-        assert flag_state.success
-        assert flag_state.data.variation == 'phone number'
-        assert flag_state.data.reason == REASON_RULE_MATCH
+        detail = client.variation_detail("ff-test-string", USER_FR_PHONE_NUM, 'error')
+        assert detail.variation == 'phone number'
+        assert detail.reason == REASON_RULE_MATCH
         assert client.variation("ff-test-string", USER_EMAIL, 'error') == 'email'
-        flag_state = client.variation_detail("ff-test-string", USER_1, 'error')
-        assert flag_state.success
-        assert flag_state.data.variation == 'others'
-        assert flag_state.data.reason == REASON_FALLTHROUGH
+        detail = client.variation_detail("ff-test-string", USER_1, 'error')
+        assert detail.variation == 'others'
+        assert detail.reason == REASON_FALLTHROUGH
 
 
 def test_segment():
@@ -167,14 +166,12 @@ def test_segment():
         assert client.initialize
         assert client.variation("ff-test-seg", USER_1, 'error') == 'teamA'
         assert client.variation("ff-test-seg", USER_2, 'error') == 'teamB'
-        flag_state = client.variation_detail("ff-test-seg", USER_3, 'error')
-        assert flag_state.success
-        assert flag_state.data.variation == 'teamA'
-        assert flag_state.data.reason == REASON_RULE_MATCH
-        flag_state = client.variation_detail("ff-test-seg", USER_4, 'error')
-        assert flag_state.success
-        assert flag_state.data.variation == 'teamB'
-        assert flag_state.data.reason == REASON_FALLTHROUGH
+        detail = client.variation_detail("ff-test-seg", USER_3, 'error')
+        assert detail.variation == 'teamA'
+        assert detail.reason == REASON_RULE_MATCH
+        detail = client.variation_detail("ff-test-seg", USER_4, 'error')
+        assert detail.variation == 'teamB'
+        assert detail.reason == REASON_FALLTHROUGH
 
 
 def test_json_variation():
@@ -183,11 +180,10 @@ def test_json_variation():
         json_object = client.variation("ff-test-json", USER_1, {})
         assert json_object["code"] == 200
         assert json_object["reason"] == "you win 100 euros"
-        flag_state = client.variation_detail("ff-test-json", USER_2, {})
-        assert flag_state.success
-        assert flag_state.data.variation["code"] == 404
-        assert flag_state.data.variation["reason"] == "fail to win the lottery"
-        assert flag_state.data.reason == REASON_FALLTHROUGH
+        detail = client.variation_detail("ff-test-json", USER_2, {})
+        assert detail.variation["code"] == 404
+        assert detail.variation["reason"] == "fail to win the lottery"
+        assert detail.reason == REASON_FALLTHROUGH
 
 
 def test_flag_known():
@@ -205,32 +201,30 @@ def test_get_all_latest_flag_variations():
     with make_fb_client_offline() as client:
         assert client.initialize
         all_states = client.get_all_latest_flag_variations(USER_1)
-        ed = all_states.get("ff-test-bool")
-        assert ed is not None and ed.variation
-        ed = all_states.get("ff-test-number")
+        ed = all_states.get("ff-test-bool", False)
+        assert ed is not None and ed.variation is True
+        ed = all_states.get("ff-test-number", -1)
         assert ed is not None and ed.variation == 1
-        ed = all_states.get("ff-test-string")
+        ed = all_states.get("ff-test-string", 'error')
         assert ed is not None and ed.variation == "others"
-        ed = all_states.get("ff-test-seg")
+        ed = all_states.get("ff-test-seg", 'error')
         assert ed is not None and ed.variation == "teamA"
-        ed = all_states.get("ff-test-json")
+        ed = all_states.get("ff-test-json", {})
         assert ed is not None and ed.variation["code"] == 200
 
 
 def test_variation_argument_error():
     with make_fb_client_offline() as client:
         assert client.initialize
-        flag_state = client.variation_detail("ff-not-existed", USER_1, False)
-        assert not flag_state.success
-        assert not flag_state.data.variation
-        assert flag_state.data.reason == REASON_FLAG_NOT_FOUND
-        flag_state = client.variation_detail("ff-test-bool", None, False)  # type: ignore
-        assert not flag_state.success
-        assert not flag_state.data.variation
-        assert flag_state.data.reason == REASON_USER_NOT_SPECIFIED
+        detail = client.variation_detail("ff-not-existed", USER_1, False)
+        assert detail.variation is False
+        assert detail.reason == REASON_FLAG_NOT_FOUND
+        detail = client.variation_detail("ff-test-bool", None, None)  # type: ignore
+        assert detail.variation is None
+        assert detail.reason == REASON_USER_NOT_SPECIFIED
         all_states = client.get_all_latest_flag_variations(None)  # type: ignore
-        assert not all_states.success
-        assert all_states.message == REASON_USER_NOT_SPECIFIED
+        assert all_states.success is False
+        assert all_states.reason == REASON_USER_NOT_SPECIFIED
 
 
 @patch.object(InMemoryDataStorage, "get_all")
@@ -240,10 +234,19 @@ def test_variation_unexpected_error(mock_get_method, mock_get_all_method):
     mock_get_all_method.side_effect = RuntimeError('test exception')
     with make_fb_client_offline() as client:
         assert client.initialize
-        flag_state = client.variation_detail("ff-test-bool", USER_1, False)
-        assert not flag_state.success
-        assert not flag_state.data.variation
-        assert flag_state.data.reason == REASON_ERROR
+        detail = client.variation_detail("ff-test-bool", USER_1, False)
+        assert detail.variation is False
+        assert detail.reason == REASON_ERROR
         all_states = client.get_all_latest_flag_variations(USER_1)
         assert not all_states.success
-        assert all_states.message == REASON_ERROR
+        assert all_states.reason == REASON_ERROR
+
+
+def test_variation_error_default_value():
+    now = datetime.utcnow()
+    with make_fb_client_offline() as client:
+        assert client.initialize
+        with pytest.raises(ValueError):
+            client.variation_detail("ff-test-bool", USER_1, now)
+        with pytest.raises(ValueError):
+            client.variation("ff-test-bool", USER_1, now)
