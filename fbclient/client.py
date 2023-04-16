@@ -90,8 +90,8 @@ class FBClient:
             if not isinstance(self._update_processor, NullUpdateProcessor):
                 log.info("FB Python SDK: Waiting for Client initialization in %s seconds" % str(start_wait))
 
-            if isinstance(self._data_storage, NullDataStorage):
-                log.info("FB Python SDK: SDK just returns default variation")
+            if isinstance(self._data_storage, NullDataStorage) or not self._data_storage.initialized:
+                log.warning("FB Python SDK: SDK just returns default variation because of no data found in the given environment")
 
             update_processor_ready.wait(start_wait)
             if self._config.is_offline:
@@ -179,7 +179,7 @@ class FBClient:
         default_value_type, default_value = self.__handle_default_value(key, default)
         try:
             if not self.initialize:
-                log.warning('FB Python SDK: Evaluation called before Java SDK client initialized for feature flag, well using the default value')
+                log.warning('FB Python SDK: Evaluation called before SDK is initialized for feature flag, well using the default value')
                 return _EvalResult.error(default_value, REASON_CLIENT_NOT_READY, key, default_value_type)
 
             if not key:
@@ -292,7 +292,7 @@ class FBClient:
         """
         try:
             if not self.initialize:
-                log.warning('FB Python SDK: isFlagKnown called before Java SDK client initialized for feature flag')
+                log.warning('FB Python SDK: isFlagKnown called before SDK is initialized for feature flag')
                 return False
             return self._get_flag_internal(key) is not None
         except Exception as e:

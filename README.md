@@ -101,6 +101,8 @@ if client.update_status_provider.wait_for_OKState():
     # the client is ready
 ```
 
+> To check if the client is ready is optional. Even if the client is not ready, you can still evaluate feature flags, but the default value will be returned if SDK is not yet initialized.
+
 ### FBUser
 
 A dictionary of attributes that can affect flag evaluation, usually corresponding to a user of your application.
@@ -124,8 +126,6 @@ if client.initialize:
     detail = client.variation_detail(flag_key, user, default=None)
 ```
 
-If evaluation called before SDK client initialized or you set the wrong flag key or user for the evaluation, SDK will return the default value you set. The `fbclient.common_types.EvalDetail` will explain the details of the last evaluation including error raison.
-
 If you would like to get variations of all feature flags in a special environment, you can use `fbclient.client.FBClient.get_all_latest_flag_variations`, SDK will return `fbclient.common_types.AllFlagStates`, that explain the details of all feature flags. `fbclient.common_types.AllFlagStates.get()` returns the detail of a given feature flag key.
 
 ```python
@@ -134,6 +134,8 @@ if client.initialize:
     all_flag_values = client.get_all_latest_flag_variations(user)
     detail = all_flag_values.get(flag_key, default=None)
 ```
+
+> Note that if evaluation called before Go SDK client initialized, you set the wrong flag key/user for the evaluation or the related feature flag is not found, SDK will return the default value you set. The `fbclient.common_types.EvalDetail` will explain the details of the latest evaluation including error raison.
 
 ### Offline Mode
 

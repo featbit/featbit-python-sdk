@@ -228,4 +228,4 @@ class Streaming(Thread, UpdateProcessor):
 
     @property
     def initialized(self) -> bool:
-        return self.__ready.is_set() and self.__storage.initialized
+        return self.__ready.is_set()

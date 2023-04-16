@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime
 from pathlib import Path
+from time import sleep
 from unittest.mock import patch
 
 import pytest
@@ -98,6 +99,8 @@ def test_start_and_nowait(mock_start_method):
         pass
     mock_start_method.side_effect = start
     with make_fb_client(NullUpdateProcessor, NullEventProcessor, start_wait=0) as client:
+        assert not client.initialize
+        sleep(0.1)
         assert not client.update_status_provider.wait_for_OKState(timeout=0.1)
 
 
@@ -109,11 +112,14 @@ def test_variation_when_client_not_initialized(mock_start_method):
     with make_fb_client(NullUpdateProcessor, NullEventProcessor, start_wait=0.1) as client:
         assert not client.initialize
         detail = client.variation_detail("ff-test-bool", USER_1, False)
-        assert not detail.variation
+        assert detail.variation is False
         assert detail.reason == REASON_CLIENT_NOT_READY
         all_states = client.get_all_latest_flag_variations(USER_1)  # type: ignore
         assert not all_states.success
         assert all_states.reason == REASON_CLIENT_NOT_READY
+        detail = all_states.get("ff-test-bool", False)
+        assert detail.variation is False
+        assert detail.reason == REASON_FLAG_NOT_FOUND
 
 
 def test_bool_variation():
