@@ -93,15 +93,20 @@ def test_start_and_timeout(mock_start_method):
         assert not client.initialize
 
 
+def test_start_and_nowait():
+    with make_fb_client(NullUpdateProcessor, NullEventProcessor, start_wait=0) as client:
+        assert client.update_status_provider.wait_for_OKState(timeout=0.1)
+        assert client.initialize
+
+
 @patch.object(NullUpdateProcessor, "start")
-def test_start_and_nowait(mock_start_method):
+def test_start_nowait_and_timeout(mock_start_method):
     def start():
         pass
     mock_start_method.side_effect = start
     with make_fb_client(NullUpdateProcessor, NullEventProcessor, start_wait=0) as client:
-        assert not client.initialize
-        sleep(0.1)
         assert not client.update_status_provider.wait_for_OKState(timeout=0.1)
+        assert not client.initialize
 
 
 @patch.object(NullUpdateProcessor, "start")

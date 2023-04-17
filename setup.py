@@ -39,7 +39,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=base_reqs,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',

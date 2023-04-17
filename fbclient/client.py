@@ -14,7 +14,6 @@ from fbclient.event_processor import DefaultEventProcessor, NullEventProcessor
 from fbclient.event_types import FlagEvent, Metric, MetricEvent, UserEvent
 from fbclient.interfaces import DataUpdateStatusProvider
 from fbclient.status import DataUpdateStatusProviderImpl
-from fbclient.status_types import State
 from fbclient.streaming import Streaming, _data_to_dict
 from fbclient.update_processor import NullUpdateProcessor
 from fbclient.utils import (cast_variation_by_flag_type, check_uwsgi, log,
@@ -67,7 +66,10 @@ class FBClient:
             raise ValueError("Config is not valid")
 
         self._config = config
-        self._config.validate()
+        if self._config.is_offline:
+            log.info("FB Python SDK: SDK is in offline mode")
+        else:
+            self._config.validate()
 
         # init components
         # event processor
@@ -90,15 +92,11 @@ class FBClient:
             if not isinstance(self._update_processor, NullUpdateProcessor):
                 log.info("FB Python SDK: Waiting for Client initialization in %s seconds" % str(start_wait))
 
-            if isinstance(self._data_storage, NullDataStorage) or not self._data_storage.initialized:
+            if isinstance(self._data_storage, NullDataStorage) or (not self._data_storage.initialized and not self._config.is_offline):
                 log.warning("FB Python SDK: SDK just returns default variation because of no data found in the given environment")
 
             update_processor_ready.wait(start_wait)
-            if self._config.is_offline:
-                log.info("FB Python SDK: SDK is in offline mode")
-            elif self._update_processor.initialized:
-                log.info("FB Python SDK: SDK initialization is completed")
-            else:
+            if not self._update_processor.initialized:
                 log.warning("FB Python SDK: SDK was not successfully initialized")
         else:
             log.info("FB Python SDK: SDK starts in asynchronous mode")
@@ -374,13 +372,10 @@ class FBClient:
         :param json_str: feature flags, segments...etc in the json format
         :return: True if the initialization is well done
         """
-        if self._config.is_offline and json_str:
+        if self._config.is_offline:
             all_data = json.loads(json_str)
             if valide_all_data(all_data):
                 version, data = _data_to_dict(all_data['data'])
-                res = self._update_status_provider.init(data, version)
-                if res:
-                    self._update_status_provider.update_state(State.ok_state())
-                return res
+                return self._update_status_provider.init(data, version)
 
         return False
