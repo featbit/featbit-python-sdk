@@ -36,7 +36,7 @@ from fbclient.config import Config
 
 env_secret = '<replace-with-your-env-secret>'
 event_url = 'http://localhost:5100'
-streaming_url = '"ws://localhost:5100"'
+streaming_url = 'ws://localhost:5100'
 
 set_config(Config(env_secret, event_url, streaming_url))
 client = get()
