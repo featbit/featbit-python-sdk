@@ -1,7 +1,7 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from queue import Empty, Queue
-from threading import BoundedSemaphore, Lock, Thread
+from threading import BoundedSemaphore, Condition, Lock, Thread
 from typing import List, Optional
 
 from fbclient.common_types import FBEvent
@@ -76,7 +76,7 @@ class DefaultEventProcessor(EventProcessor):
                 log.info('FB Python SDK: event processor is stopping')
                 self.__closed = True
                 self.__flush_task.stop()
-                self.flush()
+                self.__put_message_async(MessageType.FLUSH)
                 self.__put_message_and_wait_terminate(MessageType.SHUTDOWN)
 
 
@@ -94,6 +94,7 @@ class EventDispatcher(Thread):
         self.__events_buffer_to_next_flush = []
         self.__flush_workers = ThreadPoolExecutor(max_workers=self.__MAX_FLUSH_WORKERS_NUMBER)
         self.__permits = BoundedSemaphore(value=self.__MAX_FLUSH_WORKERS_NUMBER)
+        self.__lock = Condition(Lock())
 
     # blocks until at least one message is available and then:
     # 1: transfer the events to event buffer
@@ -137,6 +138,11 @@ class EventDispatcher(Thread):
             self.__events_buffer_to_next_flush.append(event)
 
     def __trigger_flush(self):
+        def flush_payload_done(fn):
+            self.__permits.release()
+            with self.__lock:
+                self.__lock.notify_all()
+
         if not self.__closed and len(self.__events_buffer_to_next_flush) > 0:
             log.debug('trigger flush')
             # get all the current events from event buffer
@@ -146,21 +152,27 @@ class EventDispatcher(Thread):
                 # get an available flush worker to send events
                 self.__flush_workers \
                     .submit(FlushPayloadRunner(self.__config, self.__sender, payloads).run) \
-                    .add_done_callback(lambda x: self.__permits.release())
+                    .add_done_callback(flush_payload_done)
                 # clear the buffer for the next flush
                 self.__events_buffer_to_next_flush.clear()
             # if no available flush worker, keep the events in the buffer
 
     def __shutdown(self):
         if not self.__closed:
-            try:
-                log.debug('event dispatcher is cleaning up thread and conn pool')
-                self.__closed = True
-                log.debug('flush worker pool is stopping...')
-                self.__flush_workers.shutdown(wait=True)
-                self.__sender.stop()
-            except Exception as e:
-                log.exception('FB Python SDK: unexpected error when closing event dispatcher: %s' % str(e))
+            with self.__lock:
+                try:
+                    log.debug('event dispatcher is cleaning up thread and conn pool')
+                    self.__wait_until_flush_playload_worker_down()
+                    self.__closed = True
+                    log.debug('flush worker pool is stopping...')
+                    self.__flush_workers.shutdown(wait=True)
+                    self.__sender.stop()
+                except Exception as e:
+                    log.exception('FB Python SDK: unexpected error when closing event dispatcher: %s' % str(e))
+
+    def __wait_until_flush_playload_worker_down(self):
+        while self.__permits._value != self.__MAX_FLUSH_WORKERS_NUMBER:
+            self.__lock.wait()
 
 
 class FlushPayloadRunner:
