@@ -92,10 +92,9 @@ class FBClient:
             if not isinstance(self._update_processor, NullUpdateProcessor):
                 log.info("FB Python SDK: Waiting for Client initialization in %s seconds" % str(start_wait))
 
+            update_processor_ready.wait(start_wait)
             if isinstance(self._data_storage, NullDataStorage) or (not self._data_storage.initialized and not self._config.is_offline):
                 log.warning("FB Python SDK: SDK just returns default variation because of no data found in the given environment")
-
-            update_processor_ready.wait(start_wait)
             if not self._update_processor.initialized:
                 log.warning("FB Python SDK: SDK was not successfully initialized")
         else:
