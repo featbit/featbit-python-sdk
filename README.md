@@ -24,6 +24,15 @@ install the sdk in using pip, this version of the SDK is compatible with Python 
 pip install fb-python-sdk
 ```
 
+### Prerequisite
+
+Before using the SDK, you need to obtain the environment secret and SDK URLs. 
+
+Follow the documentation below to retrieve these values
+
+- [How to get the environment secret](https://docs.featbit.co/docs/sdk/faq#how-to-get-the-environment-secret)
+- [How to get the SDK URLs](https://docs.featbit.co/docs/sdk/faq#how-to-get-the-sdk-urls)
+  
 ### Quick Start
 
 > Note that the _**env_secret**_, _**streaming_url**_ and _**event_url**_ are required to initialize the SDK.
