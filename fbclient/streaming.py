@@ -39,7 +39,7 @@ class _SelfClosed:
         return self.is_self_close
 
 
-def _data_to_dict(data: dict) -> tuple[int, dict]:
+def _data_to_dict(data: dict) -> Tuple[int, dict]:
     version = 0
     all_data = {}
     flags = {}
