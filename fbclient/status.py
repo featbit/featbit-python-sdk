@@ -36,6 +36,9 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
         log.exception('FB Python SDK: Data Storage error: %s, UpdateProcessor will attempt to receive the data' % str(error))
         self.update_state(State.interrupted_state(error_type, message))
 
+    def get_all(self, kind: Category) -> Mapping[str, dict]:
+        return self.__storage.get_all(kind)
+
     @property
     def initialized(self) -> bool:
         return self.__storage.initialized

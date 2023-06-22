@@ -8,7 +8,10 @@ from websocket._exceptions import WebSocketException
 
 from fbclient.category import FEATURE_FLAGS, SEGMENTS
 from fbclient.config import Config
-from fbclient.interfaces import DataUpdateStatusProvider, UpdateProcessor
+from fbclient.flag_change_notification import FlagChangedNotice
+from fbclient.interfaces import UpdateProcessor
+from fbclient.notice_broadcaster import NoticeBroadcater
+from fbclient.status import DataUpdateStatusProviderImpl
 from fbclient.status_types import (DATA_INVALID_ERROR, NETWORK_ERROR,
                                    REQUEST_INVALID_ERROR, RUNTIME_ERROR,
                                    SYSTEM_QUIT, UNKNOWN_CLOSE_CODE,
@@ -51,10 +54,12 @@ def _data_to_dict(data: dict) -> Tuple[int, dict]:
         flag['variationMap'] = dict((var['id'], var['value']) for var in flag['variations'])
         flag['_id'] = flag['id']
         flag['id'] = flag['key']
+        flag['cat'] = FEATURE_FLAGS
         flags[flag['id']] = {'id': flag['id'], 'timestamp': flag['timestamp'], 'isArchived': True} if flag['isArchived'] else flag
         version = max(version, flag['timestamp'])
     for segment in data['segments']:
         segment['timestamp'] = from_str_datetime_to_millis(segment['updatedAt'])
+        segment['cat'] = SEGMENTS
         segments[segment['id']] = {'id': segment['id'], 'timestamp': segment['timestamp'], 'isArchived': True} if segment['isArchived'] else segment
         version = max(version, segment['timestamp'])
     return version, all_data
@@ -75,9 +80,10 @@ def _handle_ws_error(error: BaseException) -> Tuple[bool, bool, State]:
 class Streaming(Thread, UpdateProcessor):
     __ping_interval = 10.0
 
-    def __init__(self, config: Config, dataUpdateStatusProvider: DataUpdateStatusProvider, ready: Event):
+    def __init__(self, config: Config, broadcaster: NoticeBroadcater, dataUpdateStatusProvider: DataUpdateStatusProviderImpl, ready: Event):
         super().__init__(daemon=True)
         self.__config = config
+        self.__broadcaster = broadcaster
         self.__storage = dataUpdateStatusProvider
         self.__ready = ready
         self.__running = True
@@ -188,6 +194,38 @@ class Streaming(Thread, UpdateProcessor):
 
     def _on_process_data(self, data):
 
+        def get_feature_flag_keys_from_segment(flags, segment_id):
+            flag_keys = []
+            for flag in flags.values():
+                for rule in flag['rules']:  # type: ignore
+                    for condition in rule['conditions']:  # type: ignore
+                        op = condition['op']  # type: ignore
+                        if not op:
+                            try:
+                                segment_ids = json.loads(condition['value'])  # type: ignore
+                                if segment_id in segment_ids:  # type: ignore
+                                    flag_keys.append(flag['id'])  # type: ignore
+                            except:
+                                pass
+            return set(flag_keys)
+
+        def broacasting():
+            flags = self.__storage.get_all(FEATURE_FLAGS)
+            for items in all_data.values() :
+                for item in sorted(items.values(), key=lambda x: x['timestamp']):
+                    if item['cat'] == FEATURE_FLAGS:
+                        # listen flag changes
+                        if item['id'] not in broacasting_ingnored_flag_keys:
+                            broacasting_ingnored_flag_keys.append(item['id'])
+                            self.__broadcaster.broadcast(FlagChangedNotice(item['id']))
+                    elif item['cat'] == SEGMENTS:
+                        # listen segment changes
+                        flag_keys = get_feature_flag_keys_from_segment(flags, item['id'])
+                        for flag_key in flag_keys:
+                            if flag_key not in broacasting_ingnored_flag_keys:
+                                broacasting_ingnored_flag_keys.append(flag_key)
+                                self.__broadcaster.broadcast(FlagChangedNotice(flag_key))
+
         log.debug('Streaming WebSocket is processing data')
         version, all_data = _data_to_dict(data)
         op_ok = False
@@ -201,6 +239,9 @@ class Streaming(Thread, UpdateProcessor):
                 # set ready when the initialization is complete.
                 self.__ready.set()
             self.__storage.update_state(State.ok_state())
+            # broadcast the flag change notices
+            broacasting_ingnored_flag_keys = []
+            broacasting()
             log.debug("processing data is well done")
         return op_ok
 

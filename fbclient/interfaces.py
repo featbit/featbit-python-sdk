@@ -265,3 +265,17 @@ class Sender(ABC):
         Shuts down the connection to feature flag center
         """
         pass
+
+
+class Notice(ABC):
+    """
+    This is not an insight event to be sent to FeatBit Flag Center; it is a notice to notify the SDK that something has happened,
+    such as flag values updated
+    """
+    @property
+    @abstractmethod
+    def notice_type(self) -> str:
+        """
+        Returns the type of this notice
+        """
+        pass

@@ -146,7 +146,7 @@ class Evaluator:
 
     def _match_any_rule(self, user: FBUser, rule: dict) -> bool:
         # conditions cannot be empty
-        return all(self._process_condition(user, condiction) for condiction in rule['conditions'])
+        return all(self._process_condition(user, condition) for condition in rule['conditions'])
 
     def _process_condition(self, user: FBUser, condition: dict) -> bool:
         op = condition['op']
