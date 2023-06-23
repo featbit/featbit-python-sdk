@@ -1,7 +1,6 @@
 import base64
 from datetime import datetime
 from pathlib import Path
-from time import sleep
 from unittest.mock import patch
 
 import pytest

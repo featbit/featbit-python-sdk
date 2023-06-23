@@ -12,7 +12,9 @@ from fbclient.evaluator import (REASON_CLIENT_NOT_READY, REASON_ERROR,
                                 REASON_USER_NOT_SPECIFIED, Evaluator)
 from fbclient.event_processor import DefaultEventProcessor, NullEventProcessor
 from fbclient.event_types import FlagEvent, Metric, MetricEvent, UserEvent
+from fbclient.flag_change_notification import FlagTracker
 from fbclient.interfaces import DataUpdateStatusProvider
+from fbclient.notice_broadcaster import NoticeBroadcater
 from fbclient.status import DataUpdateStatusProviderImpl
 from fbclient.streaming import Streaming, _data_to_dict
 from fbclient.update_processor import NullUpdateProcessor
@@ -71,6 +73,9 @@ class FBClient:
         else:
             self._config.validate()
 
+        self._broadcaster = NoticeBroadcater()
+        self._flag_tracker = FlagTracker(self._broadcaster, self.variation)
+
         # init components
         # event processor
         self._event_processor = self._build_event_processor(config)
@@ -84,8 +89,7 @@ class FBClient:
         self._update_status_provider = DataUpdateStatusProviderImpl(config.data_storage)
         # update processor
         update_processor_ready = threading.Event()
-        self._update_processor = self._build_update_processor(config, self._update_status_provider,
-                                                              update_processor_ready)
+        self._update_processor = self._build_update_processor(config, self._broadcaster, self._update_status_provider, update_processor_ready)
         self._update_processor.start()
 
         if start_wait > 0:
@@ -111,7 +115,7 @@ class FBClient:
 
         return DefaultEventProcessor(config, DefaultSender('insight', config, max_size=10))
 
-    def _build_update_processor(self, config: Config, update_status_provider, update_processor_event):
+    def _build_update_processor(self, config: Config, broadcaster: NoticeBroadcater, update_status_provider, update_processor_event):
         if config.update_processor_imp:
             log.debug("Using user-specified update processor: %s" % str(config.update_processor_imp))
             return config.update_processor_imp(config, update_status_provider, update_processor_event)
@@ -120,7 +124,7 @@ class FBClient:
             log.debug("Offline mode, SDK disable streaming data updating")
             return NullUpdateProcessor(config, update_status_provider, update_processor_event)
 
-        return Streaming(config, update_status_provider, update_processor_event)
+        return Streaming(config, broadcaster, update_status_provider, update_processor_event)
 
     @property
     def initialize(self) -> bool:
@@ -136,6 +140,15 @@ class FBClient:
     def update_status_provider(self) -> DataUpdateStatusProvider:
         return self._update_status_provider
 
+    @property
+    def flag_tracker(self) -> FlagTracker:
+        """
+        Returns an object for tracking changes in feature flag configurations.
+        The :class:`FlagTracker` contains methods for requesting notifications about feature flag changes using
+        an event listener model.
+        """
+        return self._flag_tracker
+
     def stop(self):
         """Releases all threads and network connections used by SDK.
 
@@ -145,6 +158,7 @@ class FBClient:
         self._data_storage.stop()
         self._update_processor.stop()
         self._event_processor.stop()
+        self._broadcaster.stop()
 
     def __enter__(self):
         return self

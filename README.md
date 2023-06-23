@@ -149,6 +149,40 @@ if client.initialize:
 
 > Note that if evaluation called before Go SDK client initialized, you set the wrong flag key/user for the evaluation or the related feature flag is not found, SDK will return the default value you set. The `fbclient.common_types.EvalDetail` will explain the details of the latest evaluation including error raison.
 
+### Flag Tracking
+
+`fbclient.client.FBClient.flag_tracker` registers a listener to be notified of feature flag changes in general.
+
+Note that a flag value change listener is bound to a specific user and flag key.
+
+The flag value change listener will be notified whenever the SDK receives any change to any feature flag's configuration,
+or to a user segment that is referenced by a feature flag. To register a flag value change listener, use `add_flag_value_may_changed_listener` or `add_flag_value_changed_listener`
+
+When you track a flag change using `add_flag_value_may_changed_listener`, this does not necessarily mean the flag's value has changed for any particular flag, only that some part of the flag configuration was changed so that it *_MAY_* return a different value than it previously returned for some user.
+
+If you want to track a flag whose value *_MUST_* be changed, `add_flag_value_changed_listener` will register a listener that will be notified if and only if the flag value changes.
+
+Change notices only work if the SDK is actually connecting to FeatBit feature flag center.
+If the SDK is in offline mode, then it cannot know when there is a change, because flags are read on an as-needed basis.
+
+```python
+if client.initialize:
+    #  flag value may be changed
+    client.flag_tracker.add_flag_value_may_changed_listener(flag_key, user, callback_fn)
+    #  flag value must be changed
+    client.flag_tracker.add_flag_value_changed_listener(flag_key, user, callback_fn)
+
+```
+`flag_key`: the key of the feature flag to track
+
+`user`: the user to evaluate the flag value
+
+`callback_fn`: the function to be called for the flag value change
+* the first argument is the flag key
+* the second argument is the latest flag value
+
+
+
 ### Offline Mode
 
 In some situations, you might want to stop making remote calls to FeatBit. Here is how:
