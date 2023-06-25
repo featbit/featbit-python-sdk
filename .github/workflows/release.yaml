@@ -18,9 +18,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/fb-python-sdk
+    environment: py-production
     steps:
       - uses: actions/checkout@v3
       - name: Read current version
