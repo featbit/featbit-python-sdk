@@ -13,6 +13,9 @@ TEST_NOTICE_TYPE = 'test_notice_type'
 
 
 class TestNotice(Notice):
+    # https://stackoverflow.com/questions/62460557/cannot-collect-test-class-testmain-because-it-has-a-init-constructor-from
+    __test__ = False
+
     def __init__(self, notice_type: str, content: str):
         self.__notice_type = notice_type
         self.__content = content
@@ -27,6 +30,8 @@ class TestNotice(Notice):
 
 
 class FakeFlagChangedListener(FlagChangedListener):
+    __test__ = False
+
     def __init__(self, queue: Queue):
         self.__queue = queue
 
