@@ -147,7 +147,8 @@ if client.initialize:
     detail = all_flag_values.get(flag_key, default=None)
 ```
 
-> Note that if evaluation called before Go SDK client initialized, you set the wrong flag key/user for the evaluation or the related feature flag is not found, SDK will return the default value you set. The `fbclient.common_types.EvalDetail` will explain the details of the latest evaluation including error raison.
+> **Note**
+> If evaluation happened before the client is initialized, or you provide the wrong flag key/user for evaluation, the `variation` calls will return the default value. The `fbclient.common_types.EvalDetail` will explain the details of the latest evaluation including error reason.
 
 ### Flag Tracking
 
