@@ -1,3 +1,4 @@
 include requirements.txt
 include README.md
 include dev-requirements.txt
+include release/package.json

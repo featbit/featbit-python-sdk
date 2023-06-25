@@ -1,12 +1,11 @@
+import json
 from setuptools import setup, find_packages
-
-version = {}
 
 
 def last_version():
-    with open("./fbclient/version.py") as fp:
-        exec(fp.read(), version)
-    return version['VERSION']
+    with open("./release/package.json") as fp:
+        version = json.load(fp)
+    return version['version']
 
 
 fb_version = last_version()
