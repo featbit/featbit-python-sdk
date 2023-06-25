@@ -144,7 +144,13 @@ If you would like to get variations of all feature flags in a special environmen
 if client.initialize:
     user = {'key': user_key, 'name': user_name}
     all_flag_values = client.get_all_latest_flag_variations(user)
-    detail = all_flag_values.get(flag_key, default=None)
+    # get all feature flag keys
+    keys = all_flag_values.keys()
+    for flag_key in keys:
+        # get viariation detail
+        detail = all_flag_values.get(flag_key, default=None)
+        # get viariation
+        value = all_flag_values.get_variation(flag_key, default=None)
 ```
 
 > **Note**

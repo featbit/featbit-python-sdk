@@ -206,15 +206,30 @@ def test_get_all_latest_flag_variations():
         assert client.initialize
         all_states = client.get_all_latest_flag_variations(USER_1)
         ed = all_states.get("ff-test-bool", False)
+        value = all_states.get_variation("ff-test-bool", False)
         assert ed is not None and ed.variation is True
+        assert value is True
+        assert "ff-test-bool" in all_states.keys()
         ed = all_states.get("ff-test-number", -1)
+        value = all_states.get_variation("ff-test-number", -1)
         assert ed is not None and ed.variation == 1
+        assert value == 1
+        assert "ff-test-number" in all_states.keys()
         ed = all_states.get("ff-test-string", 'error')
+        value = all_states.get_variation("ff-test-string", 'error')
         assert ed is not None and ed.variation == "others"
+        assert value == "others"
+        assert "ff-test-string" in all_states.keys()
         ed = all_states.get("ff-test-seg", 'error')
+        value = all_states.get_variation("ff-test-seg", 'error')
         assert ed is not None and ed.variation == "teamA"
+        assert value == "teamA"
+        assert "ff-test-seg" in all_states.keys()
         ed = all_states.get("ff-test-json", {})
+        value = all_states.get_variation("ff-test-json", {})
         assert ed is not None and ed.variation["code"] == 200
+        assert value["code"] == 200
+        assert "ff-test-json" in all_states.keys()
 
 
 def test_variation_argument_error():
