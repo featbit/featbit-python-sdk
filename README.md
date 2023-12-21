@@ -30,8 +30,8 @@ Before using the SDK, you need to obtain the environment secret and SDK URLs.
 
 Follow the documentation below to retrieve these values
 
-- [How to get the environment secret](https://docs.featbit.co/docs/sdk/faq#how-to-get-the-environment-secret)
-- [How to get the SDK URLs](https://docs.featbit.co/docs/sdk/faq#how-to-get-the-sdk-urls)
+- [How to get the environment secret](https://docs.featbit.co/sdk/faq#how-to-get-the-environment-secret)
+- [How to get the SDK URLs](https://docs.featbit.co/sdk/faq#how-to-get-the-sdk-urls)
   
 ### Quick Start
 
@@ -235,4 +235,4 @@ otherwise, the custom event may not be included into the experiment result.
   feature, [submit an issue](https://github.com/featbit/featbit-python-sdk/issues/new).
 
 ## See Also
-- [Connect To Python Sdk](https://docs.featbit.co/docs/getting-started/4.-connect-an-sdk/server-side-sdks/python-sdk)
+- [Connect To Python Sdk](https://docs.featbit.co/sdk/overview#python)
