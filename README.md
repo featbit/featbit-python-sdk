@@ -165,7 +165,7 @@ Note that a flag value change listener is bound to a specific user and flag key.
 The flag value change listener will be notified whenever the SDK receives any change to any feature flag's configuration,
 or to a user segment that is referenced by a feature flag. To register a flag value change listener, use `add_flag_value_may_changed_listener` or `add_flag_value_changed_listener`
 
-When you track a flag change using `add_flag_value_may_changed_listener`, this does not necessarily mean the flag's value has changed for any particular flag, only that some part of the flag configuration was changed so that it *_MAY_* return a different value than it previously returned for some user.
+When you track a flag change using `add_flag_value_maybe_changed_listener`, this does not necessarily mean the flag's value has changed for any particular flag, only that some part of the flag configuration was changed so that it *_MAY_* return a different value than it previously returned for some user.
 
 If you want to track a flag whose value *_MUST_* be changed, `add_flag_value_changed_listener` will register a listener that will be notified if and only if the flag value changes.
 
@@ -175,9 +175,9 @@ If the SDK is in offline mode, then it cannot know when there is a change, becau
 ```python
 if client.initialize:
     #  flag value may be changed
-    client.flag_tracker.add_flag_value_may_changed_listener(flag_key, user, callback_fn)
+    client.flag_tracker.add_flag_value_maybe_changed_listener(flag_key, user, flag_value_maybe_changed_callback_fn)
     #  flag value must be changed
-    client.flag_tracker.add_flag_value_changed_listener(flag_key, user, callback_fn)
+    client.flag_tracker.add_flag_value_changed_listener(flag_key, user, flag_value_changed_callback_fn)
 
 ```
 `flag_key`: the key of the feature flag to track
