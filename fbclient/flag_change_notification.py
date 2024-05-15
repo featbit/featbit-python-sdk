@@ -38,7 +38,7 @@ class FlagValueChangedListener(FlagChangedListener):
                  flag_key: str,
                  user: dict,
                  evaluate_fn: Callable[[str, dict, Any], Any],
-                 flag_value_changed_fn: Callable[[str, Any], None]):
+                 flag_value_changed_fn: Callable[[str, Any, Any], None]):
         self.__flag_key = flag_key
         self.__user = user
         self.__evaluate_fn = evaluate_fn
@@ -51,20 +51,20 @@ class FlagValueChangedListener(FlagChangedListener):
             prev_flag_value = self.__prvious_flag_value
             curr_flag_value = self.__evaluate_fn(self.__flag_key, self.__user, None)
             if prev_flag_value != curr_flag_value:
-                self.__fn(self.__flag_key, curr_flag_value)
+                self.__fn(self.__flag_key, prev_flag_value, curr_flag_value)
                 self.__prvious_flag_value = curr_flag_value
 
 
-class FlagValueMayChangedListener(FlagChangedListener):
+class FlagValueMaybeChangedListener(FlagChangedListener):
     def __init__(self,
                  flag_key: str,
                  user: dict,
                  evaluate_fn: Callable[[str, dict, Any], Any],
-                 flag_value_changed_fn: Callable[[str, Any], None]):
+                 flag_value_maybe_changed_fn: Callable[[str, Any], None]):
         self.__flag_key = flag_key
         self.__user = user
         self.__evaluate_fn = evaluate_fn
-        self.__fn = flag_value_changed_fn
+        self.__fn = flag_value_maybe_changed_fn
 
     def on_flag_change(self, notice: FlagChangedNotice):
         if notice.flag_key == self.__flag_key:
@@ -95,7 +95,7 @@ class FlagTracker:
     def add_flag_value_changed_listener(self,
                                         flag_key: str,
                                         user: dict,
-                                        flag_value_changed_fn: Callable[[str, Any], None]) -> FlagValueChangedListener:
+                                        flag_value_changed_fn: Callable[[str, Any, Any], None]) -> FlagValueChangedListener:
         """
         Registers a listener to be notified of a change in a specific feature flag's value for a specific FeatBit user.
 
@@ -110,7 +110,8 @@ class FlagTracker:
         :param user: The user to evaluate the flag value
         :param flag_value_changed_fn: The function to be called only when this flag value changes
             * the first argument is the flag key
-            * the second argument is the latest flag value, this value must be different from the previous value
+            * the second argument is the previous flag value
+            * the third argument is the current flag value
 
         :return: A listener object that can be used to remove it later on.
         """
@@ -128,10 +129,10 @@ class FlagTracker:
         self.add_flag_changed_listener(listener)
         return listener
 
-    def add_flag_value_may_changed_listener(self,
-                                            flag_key: str,
-                                            user: dict,
-                                            flag_value_changed_fn: Callable[[str, Any], None]) -> FlagValueMayChangedListener:
+    def add_flag_value_maybe_changed_listener(self,
+                                              flag_key: str,
+                                              user: dict,
+                                              flag_value_maybe_changed_fn: Callable[[str, Any], None]) -> FlagValueMaybeChangedListener:
         """
         Registers a listener to be notified of a change in a specific feature flag's value for a specific FeatBit user.
 
@@ -145,7 +146,7 @@ class FlagTracker:
 
         :param flag_key: The key of the feature flag to track
         :param user: The user to evaluate the flag value
-        :param flag_value_changed_fn: The function to be called only if any changes to a specific flag
+        :param flag_value_maybe_changed_fn: The function to be called if any changes to a specific flag
             * the first argument is the flag key
             * the second argument is the latest flag value, this value may be same as the previous value
 
@@ -159,10 +160,10 @@ class FlagTracker:
         # check user
         FBUser.from_dict(user)
         # check flag_value_changed_fn
-        if not isinstance(flag_value_changed_fn, Callable) or not flag_value_changed_fn:
+        if not isinstance(flag_value_maybe_changed_fn, Callable) or not flag_value_maybe_changed_fn:
             raise ValueError('flag_value_changed_fn must be a callable function')
 
-        listener = FlagValueMayChangedListener(flag_key, user, self.__evaluate_fn, flag_value_changed_fn)
+        listener = FlagValueMaybeChangedListener(flag_key, user, self.__evaluate_fn, flag_value_maybe_changed_fn)
         self.add_flag_changed_listener(listener)
         return listener
 

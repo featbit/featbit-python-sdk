@@ -25,7 +25,7 @@ class ReadWriteLock:
         with self._read_ready:
             self._readers = self._readers - 1 if self._readers > 0 else 0
             if self._readers == 0:
-                self._read_ready.notifyAll()
+                self._read_ready.notify_all()
 
     def write_lock(self):
         """ Acquire a write lock. Blocks until there are no

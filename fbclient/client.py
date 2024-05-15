@@ -343,7 +343,7 @@ class FBClient:
         :param event_name: the name of the event, which may correspond to a goal in A/B tests
         :param metric_value: a numeric value used by the experiment, default value is 1.0
         """
-        if not event_name or metric_value <= 0:
+        if not event_name:
             log.warning('FB Python SDK: event/metric invalid')
             return
         try:
@@ -375,7 +375,7 @@ class FBClient:
 
         metric_event = MetricEvent(fb_user)
         for event_name, metric_value in metrics.items():
-            if event_name and metric_value > 0:
+            if event_name:
                 metric_event.add(Metric(event_name, metric_value))
         self._event_handler(metric_event)
 
