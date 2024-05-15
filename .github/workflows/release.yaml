@@ -55,5 +55,5 @@ jobs:
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.6
         with:
-          user: featbit
+          user: __token__
           password: ${{ secrets.PYPI_PASSWORD }}
