@@ -56,5 +56,5 @@ setup(
         "dev": dev_reqs
     },
     tests_require=dev_reqs,
-    python_requires='>=3.6, <=3.12'
+    python_requires='>=3.6, <3.13'
 )
