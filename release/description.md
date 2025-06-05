@@ -1,5 +1,5 @@
 
-version: 1.1.5
+version: 1.1.7
 
 ## Break changes
 
@@ -11,4 +11,4 @@ No new features
 
 ## Updates
 
-- optimize `AllFlagStates` in adding two functions: `keys` and `get_variation`
+- handle python versions 3.12.x
