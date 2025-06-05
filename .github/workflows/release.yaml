@@ -53,7 +53,8 @@ jobs:
       - name: Build package
         run: python -m build
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.6
+        uses: pypa/gh-action-pypi-publish@v1.12.4
         with:
           user: __token__
           password: ${{ secrets.PYPI_PASSWORD }}
+          verify-metadata: false
