@@ -1,0 +1,41 @@
+{
+  "messageType": "data-sync",
+  "data": {
+    "eventType": "full",
+    "featureFlags": [
+      {
+        "envId": "test-environment",
+        "name": "Python App Progressive Release",
+        "key": "python-app-release",
+        "variationType": "string",
+        "variations": [
+          {"id": "variation-v2", "value": "v2"},
+          {"id": "variation-v1", "value": "v1"}
+        ],
+        "targetUsers": [
+          {"keyIds": ["employee-001"], "variationId": "variation-v2"}
+        ],
+        "rules": [],
+        "isEnabled": true,
+        "disabledVariationId": "variation-v1",
+        "fallthrough": {
+          "dispatchKey": null,
+          "includedInExpt": false,
+          "variations": [
+            {"id": "variation-v1", "rollout": [0, 1], "exptRollout": 1}
+          ]
+        },
+        "exptIncludeAllTargets": true,
+        "tags": [],
+        "isArchived": false,
+        "disabledVariation": {"id": "variation-v1", "value": "v1"},
+        "creatorId": "test",
+        "updatorId": "test",
+        "createdAt": "2026-07-22T00:00:00Z",
+        "updatedAt": "2026-07-22T00:00:00Z",
+        "id": "python-app-release-id"
+      }
+    ],
+    "segments": []
+  }
+}

@@ -2,3 +2,5 @@ include requirements.txt
 include README.md
 include dev-requirements.txt
 include release/package.json
+include featbit_openfeature/py.typed
+recursive-include docs *.md

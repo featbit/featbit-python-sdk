@@ -24,9 +24,7 @@ def get() -> FBClient:
     If you need to create multiple client instances with different environments, instead of this
     singleton approach you can call directly the :class:`fbclient.client.FBClient` constructor.
     """
-    global __config
     global __client
-    global __lock
 
     try:
         __lock.read_lock()
@@ -58,7 +56,6 @@ def set_config(config: Config):
     """
     global __config
     global __client
-    global __lock
 
     try:
         __lock.write_lock()

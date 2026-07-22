@@ -18,7 +18,7 @@ If you want to use your own data source, see [Offline Mode](#offline-mode).
 ## Get Started
 
 ### Installation
-install the sdk in using pip, this version of the SDK is compatible with Python 3.6 through 3.11.
+install the sdk in using pip, this version of the SDK is compatible with Python 3.6 through 3.12.
 
 ```shell
 pip install fb-python-sdk
@@ -226,6 +226,23 @@ client.track_metric(user, event_name, numeric_value);
 
 Make sure `track_metric` is called after the related feature flag is evaluated by simply calling `variation` or `variation_detail`
 otherwise, the custom event may not be included into the experiment result.
+
+## OpenFeature
+
+This package includes an optional server-side OpenFeature provider for Python
+3.10 and later. Install it with:
+
+```shell
+pip install "fb-python-sdk[openfeature]"
+```
+
+The provider wraps the existing `FBClient`, implements all five typed
+OpenFeature resolution methods, exposes the FeatBit variation ID as the
+OpenFeature variant, forwards tracking and configuration-change events, and
+returns safe fallback details when evaluation fails.
+
+See [the OpenFeature provider guide](docs/openfeature.md) for setup, lifecycle,
+context conversion, reason/error mapping, and a complete example.
 
 ## Getting support
 
