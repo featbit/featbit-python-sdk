@@ -90,19 +90,21 @@ class EvalDetail(Jsonfy):
                  reason: str,
                  variation: Any,
                  key_name: Optional[str] = None,
-                 name: Optional[str] = None):
+                 name: Optional[str] = None,
+                 variation_id: Optional[str] = None):
         """Constructs an instance.
 
-        :param id: variation id
         :param reason: main factor that influenced the flag evaluation value
         :param variation: result of the flag evaluation in any type of string, bool, float/int, json(Python object) or default value if flag evaluation fails
         :param key_name: key name of the flag
         :param name: name of the flag
+        :param variation_id: stable identifier of the resolved variation, or None if evaluation failed
         """
         self._reason = reason
         self._variation = variation
         self._key_name = key_name
         self._name = name
+        self._variation_id = variation_id
 
     @property
     def reason(self) -> str:
@@ -128,6 +130,12 @@ class EvalDetail(Jsonfy):
         """The flag name
         """
         return self._name
+
+    @property
+    def variation_id(self) -> Optional[str]:
+        """The stable identifier of the resolved variation, if evaluation succeeded.
+        """
+        return self._variation_id
 
     def to_json_dict(self) -> dict:
         json_dict = {}
@@ -329,7 +337,8 @@ class _EvalResult:
     @property
     def to_evail_detail(self) -> "EvalDetail":
         _value = cast_variation_by_flag_type(self.__flag_type, self.__value)
-        return EvalDetail(self.__reason, _value, self.__key_name, self.__name)
+        variation_id = self.__id if self.is_success else None
+        return EvalDetail(self.__reason, _value, self.__key_name, self.__name, variation_id)
 
     @property
     def to_flag_state(self) -> "FlagState":

@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from fbclient.client import FBClient
+from fbclient.common_types import EvalDetail
 from fbclient.config import Config
 from fbclient.data_storage import InMemoryDataStorage
 from fbclient.evaluator import (REASON_CLIENT_NOT_READY, REASON_ERROR,
@@ -26,6 +27,16 @@ USER_4 = {"key": "test-user-4", "name": "test-user-4", "country": "uk", "major":
 USER_CN_PHONE_NUM = {"key": "18555358000", "name": "test-user-5"}
 USER_FR_PHONE_NUM = {"key": "0603111111", "name": "test-user-6"}
 USER_EMAIL = {"key": "test-user-7@featbit.com", "name": "test-user-7"}
+
+
+def test_eval_detail_variation_id_is_backward_compatible():
+    legacy_detail = EvalDetail("test reason", True, "flag-key", "Flag name")
+    assert legacy_detail.variation_id is None
+
+    detail_with_id = EvalDetail(
+        "test reason", True, "flag-key", "Flag name", "variation-id"
+    )
+    assert detail_with_id.variation_id == "variation-id"
 
 
 def make_fb_client(update_processor_imp, event_processor_imp, start_wait=15.):
@@ -118,6 +129,7 @@ def test_variation_when_client_not_initialized(mock_start_method):
         detail = client.variation_detail("ff-test-bool", USER_1, False)
         assert detail.variation is False
         assert detail.reason == REASON_CLIENT_NOT_READY
+        assert detail.variation_id is None
         all_states = client.get_all_latest_flag_variations(USER_1)  # type: ignore
         assert not all_states.success
         assert all_states.reason == REASON_CLIENT_NOT_READY
@@ -133,6 +145,7 @@ def test_bool_variation():
         detail = client.variation_detail("ff-test-bool", USER_2, False)
         assert detail.variation is True
         assert detail.reason == REASON_TARGET_MATCH
+        assert detail.variation_id == "18b369f8-453f-46d7-88cc-fe41d29ca6e3"
         assert client.variation("ff-test-bool", USER_3, False) is False
         detail = client.variation_detail("ff-test-bool", USER_4, False)
         assert detail.variation is True
@@ -238,6 +251,7 @@ def test_variation_argument_error():
         detail = client.variation_detail("ff-not-existed", USER_1, False)
         assert detail.variation is False
         assert detail.reason == REASON_FLAG_NOT_FOUND
+        assert detail.variation_id is None
         detail = client.variation_detail("ff-test-bool", None, None)  # type: ignore
         assert detail.variation is None
         assert detail.reason == REASON_USER_NOT_SPECIFIED
