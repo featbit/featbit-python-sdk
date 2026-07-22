@@ -234,6 +234,24 @@ def test_flag_change_callback_exception_never_escapes():
     emitter.assert_called_once()
 
 
+def test_shutdown_retries_listener_removal_after_failure():
+    client = make_client()
+    provider = FeatBitProvider(client)
+    provider.initialize(EvaluationContext())
+    listener = client.flag_tracker.add_flag_changed_listener.call_args.args[0]
+    client.flag_tracker.remove_flag_change_notifier.side_effect = [
+        RuntimeError("boom"),
+        None,
+    ]
+
+    provider.shutdown()
+    provider.initialize(EvaluationContext())
+    provider.shutdown()
+
+    client.flag_tracker.add_flag_changed_listener.assert_called_once_with(listener)
+    assert client.flag_tracker.remove_flag_change_notifier.call_count == 2
+
+
 def test_track_maps_numeric_value_and_context():
     client = make_client()
     provider = FeatBitProvider(client)

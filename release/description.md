@@ -1,9 +1,9 @@
 
 version: 1.2.0
 
-## Break changes
+## Breaking changes
 
-No Break changes
+No breaking changes
 
 ## New features
 

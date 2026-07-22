@@ -37,6 +37,7 @@ def test_eval_detail_variation_id_is_backward_compatible():
         "test reason", True, "flag-key", "Flag name", "variation-id"
     )
     assert detail_with_id.variation_id == "variation-id"
+    assert detail_with_id.to_json_dict() == legacy_detail.to_json_dict()
 
 
 def make_fb_client(update_processor_imp, event_processor_imp, start_wait=15.):

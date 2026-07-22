@@ -84,7 +84,6 @@ class FeatBitProvider(AbstractProvider):
     def shutdown(self) -> None:
         with self._lifecycle_lock:
             listener = self._flag_change_listener
-            self._flag_change_listener = None
 
         if listener is None:
             return
@@ -92,6 +91,11 @@ class FeatBitProvider(AbstractProvider):
             self._client.flag_tracker.remove_flag_change_notifier(listener)
         except Exception:
             logger.exception("Failed to remove FeatBit flag change listener")
+            return
+
+        with self._lifecycle_lock:
+            if self._flag_change_listener is listener:
+                self._flag_change_listener = None
 
     def get_metadata(self) -> Metadata:
         return Metadata("featbit-openfeature-server")
