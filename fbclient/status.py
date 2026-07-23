@@ -1,6 +1,7 @@
 import threading
+from collections import deque
 from time import time
-from typing import Callable, List, Mapping
+from typing import Callable, Deque, List, Mapping, Tuple
 
 from fbclient.category import Category
 from fbclient.interfaces import DataStorage, DataUpdateStatusProvider
@@ -16,6 +17,10 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
         self.__current_state = State.intializing_state()
         self.__lock = threading.Condition(threading.Lock())
         self.__listeners: List[Callable[[State], None]] = []
+        self.__pending_notifications: Deque[
+            Tuple[State, Tuple[Callable[[State], None], ...]]
+        ] = deque()
+        self.__publishing_notifications = False
 
     def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
         try:
@@ -56,8 +61,7 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
     def update_state(self, new_state: State):
         if not new_state:
             return
-        listeners = ()
-        state = None
+        publish_notifications = False
         with self.__lock:
             old_state_type = self.__current_state.state_type
             new_state_type = new_state.state_type
@@ -73,10 +77,24 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
                 self.__current_state = State(new_state_type, state_since, error)
                 # wakes up all threads waiting for the ok state to check the new state
                 self.__lock.notify_all()
-                state = self.__current_state
-                listeners = tuple(self.__listeners)
+                self.__pending_notifications.append(
+                    (self.__current_state, tuple(self.__listeners))
+                )
+                if not self.__publishing_notifications:
+                    self.__publishing_notifications = True
+                    publish_notifications = True
 
-        if state is not None:
+        if publish_notifications:
+            self.__publish_pending_notifications()
+
+    def __publish_pending_notifications(self):
+        while True:
+            with self.__lock:
+                if not self.__pending_notifications:
+                    self.__publishing_notifications = False
+                    return
+                state, listeners = self.__pending_notifications.popleft()
+
             for listener in listeners:
                 try:
                     listener(state)
