@@ -1,17 +1,15 @@
 
-version: 1.2.0
+version: 1.1.8
 
-## Breaking changes
+## Break changes
 
-No breaking changes
+No Break changes
 
 ## New features
 
-- add an optional OpenFeature Python server provider
-- expose the stable variation ID in evaluation details for OpenFeature variants
-- map OpenFeature contexts, typed resolutions, tracking, and configuration events
+- expose the stable variation ID in evaluation details
+- add data-update status change listeners
 
 ## Updates
 
-- keep the base SDK compatible with Python 3.6 through 3.12
-- require Python 3.10 or later only when using the `openfeature` extra
+- handle Python versions 3.12.x

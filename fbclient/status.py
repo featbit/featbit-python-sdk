@@ -1,6 +1,6 @@
 import threading
 from time import time
-from typing import Mapping
+from typing import Callable, List, Mapping
 
 from fbclient.category import Category
 from fbclient.interfaces import DataStorage, DataUpdateStatusProvider
@@ -15,6 +15,7 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
         self.__storage = storage
         self.__current_state = State.intializing_state()
         self.__lock = threading.Condition(threading.Lock())
+        self.__listeners: List[Callable[[State], None]] = []
 
     def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
         try:
@@ -55,6 +56,8 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
     def update_state(self, new_state: State):
         if not new_state:
             return
+        listeners = ()
+        state = None
         with self.__lock:
             old_state_type = self.__current_state.state_type
             new_state_type = new_state.state_type
@@ -70,6 +73,34 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
                 self.__current_state = State(new_state_type, state_since, error)
                 # wakes up all threads waiting for the ok state to check the new state
                 self.__lock.notify_all()
+                state = self.__current_state
+                listeners = tuple(self.__listeners)
+
+        if state is not None:
+            for listener in listeners:
+                try:
+                    listener(state)
+                except Exception:
+                    log.exception('FB Python SDK: Update status listener failed')
+
+    def add_listener(self, listener: Callable[[State], None]):
+        if not callable(listener):
+            return
+        with self.__lock:
+            try:
+                if listener not in self.__listeners:
+                    self.__listeners.append(listener)
+            except Exception:
+                log.exception('FB Python SDK: Could not add update status listener')
+
+    def remove_listener(self, listener: Callable[[State], None]):
+        with self.__lock:
+            try:
+                self.__listeners.remove(listener)
+            except ValueError:
+                pass
+            except Exception:
+                log.exception('FB Python SDK: Could not remove update status listener')
 
     def wait_for_OKState(self, timeout: float = 0) -> bool:
         _timeout = 0 if timeout is None or timeout <= 0 else timeout

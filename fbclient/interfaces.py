@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Mapping, Optional
+from typing import Callable, Mapping, Optional
 
 from fbclient.category import Category
 from fbclient.common_types import FBEvent
@@ -121,6 +121,24 @@ class DataUpdateStatusProvider(ABC):
 
         :param timeout: the maximum amount of time to wait or to block indefinitely if the timeout is zero or negative.
         :return: True if the state is OK; False if the state is OFF or timeout elapses
+        """
+        pass
+
+    def add_listener(self, listener: Callable[[State], None]):
+        """
+        Registers a listener for update-processing status changes.
+
+        The default implementation is a no-op so existing custom status
+        providers remain backward compatible.
+        """
+        pass
+
+    def remove_listener(self, listener: Callable[[State], None]):
+        """
+        Removes a previously registered update-status listener.
+
+        The default implementation is a no-op so existing custom status
+        providers remain backward compatible.
         """
         pass
 

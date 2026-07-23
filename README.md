@@ -112,6 +112,16 @@ if client.update_status_provider.wait_for_OKState():
 
 It's possible to set a timeout in seconds for the `wait_for_OKState` method. If the timeout is reached, the method will return `False` and the client will still be in an uninitialized state. If you do not specify a timeout, the method will wait indefinitely.
 
+You can also observe later connection interruptions and recoveries:
+
+```python
+def on_status_change(state):
+    print(state.state_type, state.error_track)
+
+client.update_status_provider.add_listener(on_status_change)
+# Remove it during application shutdown:
+client.update_status_provider.remove_listener(on_status_change)
+```
 
 > To check if the client is ready is optional. Even if the client is not ready, you can still evaluate feature flags, but the default value will be returned if SDK is not yet initialized.
 
@@ -136,6 +146,7 @@ if client.initialize:
     flag_value = client.variation(flag_key, user, default_value)
     # evaluate the flag value and get the detail
     detail = client.variation_detail(flag_key, user, default=None)
+    print(detail.variation, detail.variation_id, detail.reason)
 ```
 
 If you would like to get variations of all feature flags in a special environment, you can use `fbclient.client.FBClient.get_all_latest_flag_variations`, SDK will return `fbclient.common_types.AllFlagStates`, that explain the details of all feature flags. `fbclient.common_types.AllFlagStates.get()` returns the detail of a given feature flag key.
@@ -226,23 +237,6 @@ client.track_metric(user, event_name, numeric_value);
 
 Make sure `track_metric` is called after the related feature flag is evaluated by simply calling `variation` or `variation_detail`
 otherwise, the custom event may not be included into the experiment result.
-
-## OpenFeature
-
-This package includes an optional server-side OpenFeature provider for Python
-3.10 and later. Install it with:
-
-```shell
-pip install "fb-python-sdk[openfeature]"
-```
-
-The provider wraps the existing `FBClient`, implements all five typed
-OpenFeature resolution methods, exposes the FeatBit variation ID as the
-OpenFeature variant, forwards tracking and configuration-change events, and
-returns safe fallback details when evaluation fails.
-
-See [the OpenFeature provider guide](docs/openfeature.md) for setup, lifecycle,
-context conversion, reason/error mapping, and a complete example.
 
 ## Getting support
 

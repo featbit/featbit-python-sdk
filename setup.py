@@ -28,8 +28,6 @@ setup(
     author='Dian SUN',
     author_email='featbit.master@gmail.com',
     packages=find_packages(),
-    package_data={"featbit_openfeature": ["py.typed"]},
-    include_package_data=True,
     url='https://github.com/featbit/featbit-python-sdk',
     project_urls={
         'Code': 'https://github.com/featbit/featbit-python-sdk',
@@ -55,8 +53,7 @@ setup(
         'Programming Language :: Python :: 3.12',
     ],
     extras_require={
-        "dev": dev_reqs,
-        "openfeature": ["openfeature-sdk>=0.10,<1"]
+        "dev": dev_reqs
     },
     tests_require=dev_reqs,
     python_requires='>=3.6, <3.13'
