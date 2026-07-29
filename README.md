@@ -66,6 +66,29 @@ client.stop()
 
 - [Python Demo](https://github.com/featbit/featbit-samples/blob/main/samples/dino-game/demo-python/demo_python.py)
 
+### SDK reliability and live verification
+
+The repository includes a repeatable [reliability review](docs/REVIEW.md)
+covering unit tests, thread safety, memory retention, background-thread
+shutdown, public runtime exception isolation, and redundant code. Run the
+local resource audit with:
+
+```shell
+python scripts/resource_audit.py --evaluations 80000 --workers 8
+```
+
+To verify WebSocket synchronization, remote evaluation, status changes, event
+delivery, and clean shutdown against FeatBit Cloud or a self-hosted evaluation
+service, set `FEATBIT_ENV_SECRET` and run:
+
+```shell
+python scripts/live_integration_check.py
+```
+
+The live script never prints or persists the environment secret. See the
+review document for all supported environment variables and verification
+criteria.
+
 ### FBClient
 
 Applications **SHOULD instantiate a single FBClient instance** for the lifetime of the application. In the case where an application

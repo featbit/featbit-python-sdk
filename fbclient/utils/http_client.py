@@ -11,8 +11,10 @@ from fbclient.interfaces import Sender
 from fbclient.utils import build_headers, log
 
 
-def build_http_factory(config: Config, headers={}):
-    return HTTPFactory(build_headers(config.env_secret, headers), config.http)
+def build_http_factory(config: Config, headers=None):
+    return HTTPFactory(build_headers(config.env_secret,
+                                     headers if headers is not None else {}),
+                       config.http)
 
 
 class HTTPFactory:

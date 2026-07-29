@@ -1,6 +1,5 @@
 import json
-from threading import Event, Thread
-from time import sleep
+from threading import Event, Thread, current_thread
 from typing import Optional, Tuple
 
 import websocket
@@ -81,7 +80,7 @@ class Streaming(Thread, UpdateProcessor):
     __ping_interval = 10.0
 
     def __init__(self, config: Config, broadcaster: NoticeBroadcater, dataUpdateStatusProvider: DataUpdateStatusProviderImpl, ready: Event):
-        super().__init__(daemon=True)
+        super().__init__(name='featbit-streaming', daemon=True)
         self.__config = config
         self.__broadcaster = broadcaster
         self.__storage = dataUpdateStatusProvider
@@ -92,9 +91,10 @@ class Streaming(Thread, UpdateProcessor):
         self.__self_closed = _SelfClosed()
         self.__closed_by_error = False
         self.__force_close = False
+        self.__stop_event = Event()
         self.__has_network = not config.is_offline
         if self.__has_network:
-            self.__ping_task = RepeatableTask('streaming ping', self.__ping_interval, self._on_ping)
+            self.__ping_task = RepeatableTask('featbit-streaming-ping', self.__ping_interval, self._on_ping)
             self.__ping_task.start()
 
     def _init_wsapp(self):
@@ -131,7 +131,9 @@ class Streaming(Thread, UpdateProcessor):
                 if self.__running:
                     # calculate the delay for reconn
                     delay = self.__strategy.next_delay()
-                    sleep(delay)
+                    # An Event-backed wait lets ``stop()`` interrupt a long
+                    # exponential-backoff delay immediately.
+                    self.__stop_event.wait(delay)
             except Exception as e:
                 log.exception('FB Python SDK: Streaming unexpected error: %s', str(e))
                 self.__storage.update_state(State.error_off_state(UNKNOWN_ERROR, str(e)))
@@ -261,11 +263,29 @@ class Streaming(Thread, UpdateProcessor):
     def stop(self):
         log.info('FB Python SDK: Streaming is stopping...')
         self.__force_close = True
-        if self.__running and self.__wsapp:
-            self.__self_closed = _SelfClosed(is_self_close=True, is_reconn=False, state=State.normal_off_state())
-            self.__wsapp.close(status=WS_NORMAL_CLOSE)
+        self.__running = False
+        self.__stop_event.set()
+        try:
+            self.__storage.update_state(State.normal_off_state())
+        except Exception:
+            log.exception('FB Python SDK: could not publish streaming shutdown state')
+        try:
+            if self.__wsapp:
+                self.__self_closed = _SelfClosed(is_self_close=True,
+                                                 is_reconn=False,
+                                                 state=State.normal_off_state())
+                self.__wsapp.close(status=WS_NORMAL_CLOSE)
+        except Exception:
+            log.exception('FB Python SDK: could not close the WebSocket connection')
         if self.__has_network:
-            self.__ping_task.stop()
+            try:
+                self.__ping_task.stop()
+            except Exception:
+                log.exception('FB Python SDK: could not stop the streaming ping task')
+        if current_thread() is not self and self.is_alive():
+            self.join(self.__config.websocket.timeout + 1.0)
+            if self.is_alive():
+                log.warning('FB Python SDK: streaming thread did not stop in time')
 
     @property
     def initialized(self) -> bool:

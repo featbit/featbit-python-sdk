@@ -280,7 +280,13 @@ def test_variation_error_default_value():
     now = datetime.utcnow()
     with make_fb_client_offline() as client:
         assert client.initialize
-        with pytest.raises(ValueError):
-            client.variation_detail("ff-test-bool", USER_1, now)
-        with pytest.raises(ValueError):
-            client.variation("ff-test-bool", USER_1, now)
+        # Runtime evaluation APIs must not raise into application code merely
+        # because a fallback has an unsupported type.
+        assert client.variation("ff-test-bool", USER_1, now) is True
+        assert client.variation("ff-not-existed", USER_1, now) is now
+        assert client.variation_detail("ff-not-existed", USER_1, now).variation is now
+
+
+def test_invalid_external_json_does_not_raise():
+    with make_fb_client_offline() as client:
+        assert client.initialize_from_external_json("{") is False

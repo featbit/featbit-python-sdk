@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest pytest-mock
+          pip install flake8 pytest pytest-mock build
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with flake8
         run: |
@@ -37,3 +37,12 @@ jobs:
       - name: Test with pytest
         run: |
           pytest
+      - name: Audit concurrency, memory, and thread cleanup
+        if: matrix.python-version == '3.12'
+        run: python scripts/resource_audit.py --evaluations 20000 --workers 8
+      - name: Build production distributions
+        if: matrix.python-version == '3.12'
+        run: python -m build
+      - name: Verify wheel contains production packages only
+        if: matrix.python-version == '3.12'
+        run: python -c "import glob, zipfile; names = zipfile.ZipFile(glob.glob('dist/*.whl')[0]).namelist(); assert not any(name.startswith(('tests/', 'featbit_openfeature/')) for name in names)"

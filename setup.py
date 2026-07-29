@@ -27,7 +27,7 @@ setup(
     version=fb_version,
     author='Dian SUN',
     author_email='featbit.master@gmail.com',
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests', 'tests.*')),
     url='https://github.com/featbit/featbit-python-sdk',
     project_urls={
         'Code': 'https://github.com/featbit/featbit-python-sdk',
@@ -55,6 +55,5 @@ setup(
     extras_require={
         "dev": dev_reqs
     },
-    tests_require=dev_reqs,
     python_requires='>=3.6, <3.13'
 )

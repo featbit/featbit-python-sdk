@@ -135,8 +135,8 @@ class Config:
                  data_storage: Optional[DataStorage] = None,
                  update_processor_imp: Optional[Callable[['Config', DataUpdateStatusProvider, Event], UpdateProcessor]] = None,
                  event_processor_imp: Optional[Callable[['Config', Sender], EventProcessor]] = None,
-                 http: HTTPConfig = HTTPConfig(),
-                 websocket: WebSocketConfig = WebSocketConfig(),
+                 http: Optional[HTTPConfig] = None,
+                 websocket: Optional[WebSocketConfig] = None,
                  defaults: Optional[dict] = None):
 
         self.__env_secret = env_secret
@@ -155,8 +155,10 @@ class Config:
             events_retry_interval, 1)
         self.__events_max_retries = 1 if events_max_retries is None or events_max_retries <= 0 else min(
             events_max_retries, 3)
-        self.__http = http
-        self.__websocket = websocket
+        # Avoid sharing mutable default configuration objects between SDK
+        # clients created by unrelated applications or tests.
+        self.__http = http if http is not None else HTTPConfig()
+        self.__websocket = websocket if websocket is not None else WebSocketConfig()
         self.__defaults = defaults if defaults is not None else {}
 
     def copy_config_in_a_new_env(self, env_secret: str, defaults=None) -> 'Config':

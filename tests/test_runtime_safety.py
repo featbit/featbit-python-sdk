@@ -1,0 +1,160 @@
+import base64
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+from fbclient.client import FBClient
+from fbclient.config import Config
+from fbclient.data_storage import InMemoryDataStorage
+from fbclient.notice_broadcaster import NoticeBroadcater
+from fbclient.status import DataUpdateStatusProviderImpl
+from fbclient.streaming import Streaming
+from fbclient.update_processor import NullUpdateProcessor
+from fbclient.utils.repeatable_task import RepeatableTask
+
+
+FAKE_ENV_SECRET = base64.b64encode(b"runtime-safety").decode()
+FAKE_URL = "http://fake"
+USER = {"key": "runtime-user", "name": "Runtime User"}
+
+
+def make_offline_client():
+    client = FBClient(Config(FAKE_ENV_SECRET,
+                             event_url=FAKE_URL,
+                             streaming_url=FAKE_URL,
+                             offline=True))
+    bootstrap = Path("tests/fbclient_test_data.json").read_text()
+    assert client.initialize_from_external_json(bootstrap)
+    return client
+
+
+def featbit_thread_ids():
+    return {
+        thread.ident for thread in threading.enumerate()
+        if thread.name.startswith("featbit-")
+    }
+
+
+def test_concurrent_evaluation_is_thread_safe():
+    client = make_offline_client()
+
+    def evaluate(worker):
+        for index in range(1000):
+            user = {
+                "key": "worker-%s-%s" % (worker, index),
+                "name": "Worker %s" % worker,
+            }
+            assert isinstance(client.variation("ff-test-bool", user, False), bool)
+        return 1000
+
+    try:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            assert sum(executor.map(evaluate, range(8))) == 8000
+    finally:
+        client.stop()
+
+
+def test_repeated_clients_release_all_sdk_threads():
+    baseline = featbit_thread_ids()
+    for _ in range(10):
+        client = make_offline_client()
+        client.stop()
+        client.stop()
+    assert featbit_thread_ids() == baseline
+
+
+def test_repeatable_task_can_be_joined_cleanly():
+    task = RepeatableTask("featbit-test-repeatable", 0.01, lambda: None)
+    task.start()
+    task.stop()
+    assert not task.is_alive()
+
+
+def test_notice_broadcaster_is_safe_during_listener_churn():
+    broadcaster = NoticeBroadcater()
+    callback_count = [0]
+    callback_lock = threading.Lock()
+
+    class Notice:
+        notice_type = "test"
+
+    def listener(_notice):
+        with callback_lock:
+            callback_count[0] += 1
+
+    def churn(_worker):
+        for _ in range(200):
+            broadcaster.add_listener("test", listener)
+            broadcaster.broadcast(Notice())
+            broadcaster.remove_listener("test", listener)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(churn, range(8)))
+    broadcaster.stop()
+    broadcaster.stop()
+    assert callback_count[0] >= 0
+
+
+def test_client_public_event_and_shutdown_calls_do_not_raise():
+    class FailingEventProcessor:
+        def send_event(self, _event):
+            raise RuntimeError("send failed")
+
+        def flush(self):
+            raise RuntimeError("flush failed")
+
+        def stop(self):
+            raise RuntimeError("stop failed")
+
+    def build_event_processor(_config, _sender):
+        return FailingEventProcessor()
+
+    config = Config(FAKE_ENV_SECRET,
+                    event_url=FAKE_URL,
+                    streaming_url=FAKE_URL,
+                    update_processor_imp=NullUpdateProcessor,
+                    event_processor_imp=build_event_processor)
+    client = FBClient(config)
+    client.identify(USER)
+    client.track_metric(USER, "metric")
+    client.track_metrics(USER, {"metric": 1.0})
+    client.flush()
+    client.stop()
+    client.stop()
+
+
+def test_streaming_stop_interrupts_network_wait(monkeypatch):
+    connected = threading.Event()
+
+    class FakeWebSocketApp:
+        def __init__(self, _url, **_kwargs):
+            self.closed = threading.Event()
+            self.sock = None
+
+        def run_forever(self, **_kwargs):
+            connected.set()
+            self.closed.wait(10.0)
+
+        def close(self, status=None):
+            self.closed.set()
+
+    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp",
+                        FakeWebSocketApp)
+    config = Config(FAKE_ENV_SECRET,
+                    event_url=FAKE_URL,
+                    streaming_url=FAKE_URL)
+    broadcaster = NoticeBroadcater()
+    status = DataUpdateStatusProviderImpl(InMemoryDataStorage())
+    streaming = Streaming(config, broadcaster, status, threading.Event())
+    streaming.start()
+    assert connected.wait(1.0)
+    streaming.stop()
+    broadcaster.stop()
+    assert not streaming.is_alive()
+
+
+def test_default_config_objects_are_not_shared():
+    left = Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL)
+    right = Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL)
+    assert left.http is not right.http
+    assert left.websocket is not right.websocket

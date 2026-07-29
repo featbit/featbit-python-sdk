@@ -1,6 +1,6 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
-from queue import Empty, Queue
+from queue import Empty, Full, Queue
 from threading import BoundedSemaphore, Condition, Lock, Thread
 from typing import List, Optional
 
@@ -18,8 +18,9 @@ class DefaultEventProcessor(EventProcessor):
         self.__inbox = Queue(maxsize=config.events_max_in_queue)
         self.__closed = False
         self.__lock = Lock()
-        EventDispatcher(config, sender, self.__inbox).start()
-        self.__flush_task = RepeatableTask('insight flush', config.events_flush_interval, self.flush)
+        self.__dispatcher = EventDispatcher(config, sender, self.__inbox)
+        self.__dispatcher.start()
+        self.__flush_task = RepeatableTask('featbit-insight-flush', config.events_flush_interval, self.flush)
         self.__flush_task.start()
         log.debug('insight processor is ready')
 
@@ -33,7 +34,7 @@ class DefaultEventProcessor(EventProcessor):
         try:
             self.__inbox.put_nowait(message)
             return True
-        except:
+        except Full:
             if message.type == MessageType.SHUTDOWN:
                 # must put the shut down to inbox;
                 self.__inbox.put(message, block=True, timeout=None)
@@ -78,6 +79,9 @@ class DefaultEventProcessor(EventProcessor):
                 self.__flush_task.stop()
                 self.__put_message_async(MessageType.FLUSH)
                 self.__put_message_and_wait_terminate(MessageType.SHUTDOWN)
+                self.__dispatcher.join(5.0)
+                if self.__dispatcher.is_alive():
+                    log.warning('FB Python SDK: event dispatcher did not stop in time')
 
 
 class EventDispatcher(Thread):
@@ -86,7 +90,7 @@ class EventDispatcher(Thread):
     __BATCH_SIZE = 50
 
     def __init__(self, config: Config, sender: Sender, inbox: "Queue[EventMessage]"):
-        super().__init__(daemon=True)
+        super().__init__(name='featbit-event-dispatcher', daemon=True)
         self.__config = config
         self.__inbox = inbox
         self.__closed = False
@@ -106,6 +110,7 @@ class EventDispatcher(Thread):
             try:
                 msgs = self.__drain_inbox(size=self.__BATCH_SIZE)
                 for msg in msgs:
+                    shutdown = False
                     try:
                         if msg.type == MessageType.FLAGS or msg.type == MessageType.METRICS or msg.type == MessageType.USER:
                             self.__put_events_to_buffer(msg.event)  # type: ignore
@@ -113,11 +118,15 @@ class EventDispatcher(Thread):
                             self.__trigger_flush()
                         elif msg.type == MessageType.SHUTDOWN:
                             self.__shutdown()
-                            msg.completed()
-                            return  # exit the loop
-                        msg.completed()
+                            shutdown = True
                     except Exception as inner:
                         log.exception('FB Python SDK: unexpected error in event dispatcher: %s' % str(inner))
+                    finally:
+                        # Synchronous callers must never wait forever because a
+                        # dispatcher operation failed.
+                        msg.completed()
+                    if shutdown:
+                        return  # exit the loop
             except Exception as outer:
                 log.exception('FB Python SDK: unexpected error in event dispatcher: %s' % str(outer))
 

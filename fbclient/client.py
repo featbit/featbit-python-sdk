@@ -68,6 +68,8 @@ class FBClient:
             raise ValueError("Config is not valid")
 
         self._config = config
+        self._stop_lock = threading.Lock()
+        self._closed = False
         if self._config.is_offline:
             log.info("FB Python SDK: SDK is in offline mode")
         else:
@@ -79,7 +81,7 @@ class FBClient:
         # init components
         # event processor
         self._event_processor = self._build_event_processor(config)
-        self._event_handler = lambda event: self._event_processor.send_event(event)
+        self._event_handler = self._send_event_safely
         # data storage
         self._data_storage = config.data_storage
         # evaluator
@@ -126,6 +128,15 @@ class FBClient:
 
         return Streaming(config, broadcaster, update_status_provider, update_processor_event)
 
+    def _send_event_safely(self, event):
+        try:
+            if not self._closed:
+                self._event_processor.send_event(event)
+        except Exception:
+            # Event delivery must never affect the application request that
+            # produced the event, including when a custom processor is used.
+            log.exception('FB Python SDK: event processor failed')
+
     @property
     def initialize(self) -> bool:
         """Returns true if the client has successfully connected to feature flag center.
@@ -154,11 +165,23 @@ class FBClient:
 
         Do not attempt to use the client after calling this method.
         """
-        log.info("FB Python SDK: Python SDK client is closing...")
-        self._data_storage.stop()
-        self._update_processor.stop()
-        self._event_processor.stop()
-        self._broadcaster.stop()
+        with self._stop_lock:
+            if self._closed:
+                return
+            self._closed = True
+            log.info("FB Python SDK: Python SDK client is closing...")
+            # Stop producers before consumers, and isolate every component so
+            # one extension failure cannot prevent the remaining resources
+            # from being released or escape into application shutdown code.
+            for name, component in (
+                    ('update processor', self._update_processor),
+                    ('event processor', self._event_processor),
+                    ('notice broadcaster', self._broadcaster),
+                    ('data storage', self._data_storage)):
+                try:
+                    component.stop()
+                except Exception:
+                    log.exception('FB Python SDK: %s failed to stop' % name)
 
     def __enter__(self):
         return self
@@ -174,9 +197,13 @@ class FBClient:
     def _get_flag_internal(self, key: str) -> Optional[dict]:
         return self._data_storage.get(FEATURE_FLAGS, key)
 
-    def __handle_default_value(self, key: str, default: Any) -> Tuple[Optional[str], Optional[str]]:
+    def __handle_default_value(self, key: str, default: Any) -> Tuple[Optional[str], Any]:
         default_value = self._config.get_default_value(key, default)
-        default_value_type = simple_type_inference(default_value)
+        try:
+            default_value_type = simple_type_inference(default_value)
+        except Exception:
+            log.warning('FB Python SDK: unsupported default value; returning it unchanged on evaluation failure')
+            return None, default_value
         if default_value is None:
             return None, None
         elif default_value_type == 'boolean':
@@ -235,7 +262,7 @@ class FBClient:
         :param default: the default value of the flag, to be used if the return value is not available
         :return: one of the flag's values in any type in any type of string, bool, float, json
         or the default value if flag evaluation fails
-        :raises: ValueError if the default is not a string, boolean, numeric, or json type
+        Unsupported defaults are returned unchanged if evaluation cannot produce a flag value.
         """
         er = self._evaluate_internal(key, user, default)
         return cast_variation_by_flag_type(er.flag_type, er.value)
@@ -252,7 +279,7 @@ class FBClient:
         :param user: the attributes of the user
         :param default: the default value of the flag, to be used if the return value is not available
         :return: an :class:`fbclient.common_types.EvalDetail` object
-        :raises: ValueError if the default is not a string, boolean, numeric, or json type
+        Unsupported defaults are returned unchanged if evaluation cannot produce a flag value.
         """
         return self._evaluate_internal(key, user, default).to_evail_detail
 
@@ -318,7 +345,11 @@ class FBClient:
         schedules the next event delivery to be as soon as possible; however, the delivery still
         happens asynchronously on a thread, so this method will return immediately.
         """
-        self._event_processor.flush()
+        try:
+            if not self._closed:
+                self._event_processor.flush()
+        except Exception:
+            log.exception('FB Python SDK: event processor flush failed')
 
     def identify(self, user: dict):
         """register an end user in the feature flag center
@@ -352,7 +383,6 @@ class FBClient:
             log.warning('FB Python SDK: user invalid')
             return
 
-        fb_user = FBUser.from_dict(user)
         metric_event = MetricEvent(fb_user).add(Metric(event_name, metric_value))
         self._event_handler(metric_event)
 
@@ -385,10 +415,13 @@ class FBClient:
         :param json_str: feature flags, segments...etc in the json format
         :return: True if the initialization is well done
         """
-        if self._config.is_offline:
-            all_data = json.loads(json_str)
-            if valide_all_data(all_data):
-                version, data = _data_to_dict(all_data['data'])
-                return self._update_status_provider.init(data, version)
+        try:
+            if self._config.is_offline:
+                all_data = json.loads(json_str)
+                if valide_all_data(all_data):
+                    version, data = _data_to_dict(all_data['data'])
+                    return self._update_status_provider.init(data, version)
+        except Exception:
+            log.exception('FB Python SDK: invalid external bootstrap data')
 
         return False
