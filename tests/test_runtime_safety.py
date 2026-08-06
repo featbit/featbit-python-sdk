@@ -7,8 +7,10 @@ from pathlib import Path
 from fbclient.client import FBClient
 from fbclient.config import Config, HTTPConfig
 from fbclient.data_storage import InMemoryDataStorage
+from fbclient.event_processor import NullEventProcessor
 from fbclient.notice_broadcaster import NoticeBroadcater
 from fbclient.status import DataUpdateStatusProviderImpl
+from fbclient.status_types import State, StateType
 from fbclient.streaming import Streaming
 from fbclient.update_processor import NullUpdateProcessor
 from fbclient.utils.http_client import build_http_factory
@@ -123,6 +125,55 @@ def test_client_public_event_and_shutdown_calls_do_not_raise():
     client.flush()
     client.stop()
     client.stop()
+
+
+def test_status_listener_can_reenter_client_stop_without_deadlock():
+    stopped_components = []
+
+    class NotifyingUpdateProcessor:
+        def __init__(self, _config, status_provider, ready):
+            self.status_provider = status_provider
+            self.ready = ready
+
+        def start(self):
+            self.ready.set()
+            self.status_provider.update_state(State.ok_state())
+
+        def stop(self):
+            stopped_components.append("update")
+            self.status_provider.update_state(State.normal_off_state())
+
+        @property
+        def initialized(self):
+            return True
+
+    config = Config(FAKE_ENV_SECRET,
+                    event_url=FAKE_URL,
+                    streaming_url=FAKE_URL,
+                    update_processor_imp=NotifyingUpdateProcessor,
+                    event_processor_imp=lambda config, sender: NullEventProcessor(config, sender))
+    client = FBClient(config)
+    listener_states = []
+
+    def on_status_change(state):
+        listener_states.append(state.state_type)
+        if state.state_type == StateType.OFF:
+            client.stop()
+
+    client.update_status_provider.add_listener(on_status_change)
+    completed = threading.Event()
+
+    def stop_client():
+        client.stop()
+        completed.set()
+
+    thread = threading.Thread(target=stop_client, daemon=True)
+    thread.start()
+    assert completed.wait(1.0)
+    thread.join(1.0)
+    assert not thread.is_alive()
+    assert listener_states == [StateType.OFF]
+    assert stopped_components == ["update"]
 
 
 def test_streaming_stop_interrupts_network_wait(monkeypatch):

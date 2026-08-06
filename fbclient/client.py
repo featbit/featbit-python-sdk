@@ -169,20 +169,27 @@ class FBClient:
         with self._stop_lock:
             if self._closed:
                 return
+            # Mark the client closed atomically, then release the lock before
+            # invoking components. Component shutdown can synchronously
+            # publish status changes, and an application listener is allowed
+            # to call client.stop() again. Holding a non-reentrant lock across
+            # that callback would deadlock.
             self._closed = True
-            log.info("FB Python SDK: Python SDK client is closing...")
-            # Stop producers before consumers, and isolate every component so
-            # one extension failure cannot prevent the remaining resources
-            # from being released or escape into application shutdown code.
-            for name, component in (
-                    ('update processor', self._update_processor),
-                    ('event processor', self._event_processor),
-                    ('notice broadcaster', self._broadcaster),
-                    ('data storage', self._data_storage)):
-                try:
-                    component.stop()
-                except Exception:
-                    log.exception('FB Python SDK: %s failed to stop' % name)
+
+        log.info("FB Python SDK: Python SDK client is closing...")
+        # Stop producers before consumers, and isolate every component so one
+        # extension failure cannot prevent the remaining resources from being
+        # released or escape into application shutdown code. No user callback
+        # is invoked while the client lifecycle lock is held.
+        for name, component in (
+                ('update processor', self._update_processor),
+                ('event processor', self._event_processor),
+                ('notice broadcaster', self._broadcaster),
+                ('data storage', self._data_storage)):
+            try:
+                component.stop()
+            except Exception:
+                log.exception('FB Python SDK: %s failed to stop' % name)
 
     def __enter__(self):
         return self
