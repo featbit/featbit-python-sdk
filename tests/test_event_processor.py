@@ -122,3 +122,47 @@ def test_event_processor_events_keep_in_buffer_if_all_flush_payload_runner_are_b
         assert info.is_contain_user("test-user-2")
         assert info.is_contain_user("test-user-3")
     assert mock_sender.closed
+
+
+def test_stop_flushes_accepted_events_when_inbox_is_full(mock_sender):
+    processing_first = threading.Event()
+    release_first = threading.Event()
+
+    class BlockingUserEvent(UserEvent):
+        @property
+        def is_send_event(self):
+            processing_first.set()
+            release_first.wait(1.0)
+            return True
+
+    config = Config(FAKE_ENV_SECRET,
+                    event_url=FAKE_URL,
+                    streaming_url=FAKE_URL,
+                    events_flush_interval=3.0,
+                    events_max_in_queue=1)
+    processor = DefaultEventProcessor(config, mock_sender)
+    # RepeatableTask invokes its callback once on startup. Let that empty flush
+    # leave the one-slot inbox before constructing the full-queue scenario.
+    sleep(0.05)
+    processor.send_event(BlockingUserEvent(FBUser.from_dict(USER_1)))
+    assert processing_first.wait(1.0)
+    processor.send_event(UserEvent(FBUser.from_dict(USER_2)))
+
+    stopped = threading.Event()
+
+    def stop_processor():
+        processor.stop()
+        stopped.set()
+
+    thread = threading.Thread(target=stop_processor)
+    thread.start()
+    release_first.set()
+    assert stopped.wait(2.0)
+    thread.join(1.0)
+
+    info = mock_sender.get_sending_json_info(timeout=0.2)
+    assert info is not None
+    assert info.size == 2
+    assert info.is_contain_user("test-user-1")
+    assert info.is_contain_user("test-user-2")
+    assert mock_sender.closed

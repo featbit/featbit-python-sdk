@@ -1,5 +1,5 @@
 import json
-from threading import Event, Thread, current_thread
+from threading import Event, Lock, Thread, current_thread
 from typing import Optional, Tuple
 
 import websocket
@@ -26,6 +26,11 @@ WS_NORMAL_CLOSE = 1000
 WS_GOING_AWAY_CLOSE = 1001
 
 WS_INVALID_REQUEST_CLOSE = 4003
+
+# websocket-client exposes the connection timeout as process-global state.
+# Serialize the short connection-establishment window and restore the previous
+# value as soon as a callback confirms success or failure.
+_WEBSOCKET_TIMEOUT_LOCK = Lock()
 
 
 class _SelfClosed:
@@ -92,6 +97,9 @@ class Streaming(Thread, UpdateProcessor):
         self.__closed_by_error = False
         self.__force_close = False
         self.__stop_event = Event()
+        self.__timeout_state_lock = Lock()
+        self.__timeout_lock_held = False
+        self.__previous_websocket_timeout = None
         self.__has_network = not config.is_offline
         if self.__has_network:
             self.__ping_task = RepeatableTask('featbit-streaming-ping', self.__ping_interval, self._on_ping)
@@ -105,8 +113,6 @@ class Streaming(Thread, UpdateProcessor):
         url = self.__config.streaming_uri + params
         headers = build_headers(self.__config.env_secret)
 
-        # a timeout is triggered if no connection response is received
-        websocket.setdefaulttimeout(self.__config.websocket.timeout)
         # init web socket app
         self.__wsapp = websocket.WebSocketApp(url,
                                               header=headers,
@@ -114,13 +120,35 @@ class Streaming(Thread, UpdateProcessor):
                                               on_message=self._on_message,
                                               on_close=self._on_close,
                                               on_error=self._on_error)
-        # set the conn time
-        self.__strategy.set_good_run()
         log.debug('Streaming WebSocket is connecting...')
+
+    def __prepare_connection_timeout(self):
+        _WEBSOCKET_TIMEOUT_LOCK.acquire()
+        with self.__timeout_state_lock:
+            self.__timeout_lock_held = True
+            self.__previous_websocket_timeout = websocket.getdefaulttimeout()
+        try:
+            websocket.setdefaulttimeout(self.__config.websocket.timeout)
+        except Exception:
+            self.__restore_connection_timeout()
+            raise
+
+    def __restore_connection_timeout(self):
+        with self.__timeout_state_lock:
+            if not self.__timeout_lock_held:
+                return
+            previous_timeout = self.__previous_websocket_timeout
+            self.__previous_websocket_timeout = None
+            self.__timeout_lock_held = False
+        try:
+            websocket.setdefaulttimeout(previous_timeout)
+        finally:
+            _WEBSOCKET_TIMEOUT_LOCK.release()
 
     def run(self):
         while (not self.__force_close and self.__running and self.__has_network):
             try:
+                self.__prepare_connection_timeout()
                 self._init_wsapp()
                 self.__wsapp.run_forever(sslopt=self.__config.websocket.sslopt,  # type: ignore
                                          http_proxy_host=self.__config.websocket.proxy_host,
@@ -128,6 +156,7 @@ class Streaming(Thread, UpdateProcessor):
                                          http_proxy_auth=self.__config.websocket.proxy_auth,
                                          proxy_type=self.__config.websocket.proxy_type,
                                          skip_utf8_validation=self.__config.websocket.skip_utf8_validation)
+                self.__restore_connection_timeout()
                 if self.__running:
                     # calculate the delay for reconn
                     delay = self.__strategy.next_delay()
@@ -136,8 +165,17 @@ class Streaming(Thread, UpdateProcessor):
                     self.__stop_event.wait(delay)
             except Exception as e:
                 log.exception('FB Python SDK: Streaming unexpected error: %s', str(e))
-                self.__storage.update_state(State.error_off_state(UNKNOWN_ERROR, str(e)))
+                try:
+                    self.__storage.update_state(State.interrupted_state(UNKNOWN_ERROR, str(e)))
+                except Exception:
+                    log.exception('FB Python SDK: could not publish streaming error state')
+                if self.__running and not self.__force_close:
+                    # Constructor failures occur outside websocket-client's
+                    # callback path, so they need the same backoff as normal
+                    # reconnects to avoid a CPU/network retry storm.
+                    self.__stop_event.wait(self.__strategy.next_delay())
             finally:
+                self.__restore_connection_timeout()
                 # clear the last connection state
                 self.__wsapp = None
                 self.__self_closed = _SelfClosed()
@@ -154,6 +192,7 @@ class Streaming(Thread, UpdateProcessor):
             self.__wsapp.send(json.dumps({'messageType': 'ping', 'data': None}))
 
     def _on_close(self, wsapp, close_code, close_msg):
+        self.__restore_connection_timeout()
         if self.__self_closed():
             # close by client
             self.__running = self.__self_closed.is_reconn
@@ -177,6 +216,7 @@ class Streaming(Thread, UpdateProcessor):
             self.__storage.update_state(state)
 
     def _on_error(self, wsapp: websocket.WebSocketApp, error):
+        self.__restore_connection_timeout()
         is_reconn, is_close_ws, state = _handle_ws_error(error)
         log.warning('FB Python SDK: Streaming WebSocket Failure: %s' % str(error))
         if is_close_ws:
@@ -188,6 +228,8 @@ class Streaming(Thread, UpdateProcessor):
             self.__storage.update_state(state)
 
     def _on_open(self, wsapp: websocket.WebSocketApp):
+        self.__restore_connection_timeout()
+        self.__strategy.set_good_run()
         log.debug('Asking Data updating on WebSocket')
         version = self.__storage.latest_version if self.__storage.latest_version > 0 else 0
         data_sync_msg = {'messageType': 'data-sync', 'data': {'timestamp': version}}
@@ -251,14 +293,16 @@ class Streaming(Thread, UpdateProcessor):
         log.trace('Streaming WebSocket data: %s' % msg)  # type: ignore
         try:
             all_data = json.loads(msg)
-            if valide_all_data(all_data) and not self._on_process_data(all_data['data']) and self.__wsapp:
+            if not valide_all_data(all_data):
+                raise ValueError('invalid streaming data')
+            if not self._on_process_data(all_data['data']) and self.__wsapp:
                 # state already updated in init or upsert, just reconn
                 self.__self_closed = _SelfClosed(is_self_close=True, is_reconn=True, state=None)
                 wsapp.close(status=WS_GOING_AWAY_CLOSE)
         except Exception as e:
-            if isinstance(e, json.JSONDecodeError):
-                self.__self_closed = _SelfClosed(is_self_close=True, is_reconn=False, state=State.error_off_state(DATA_INVALID_ERROR, str(e)))
-                wsapp.close(status=WS_GOING_AWAY_CLOSE)
+            self.__self_closed = _SelfClosed(is_self_close=True, is_reconn=False,
+                                             state=State.error_off_state(DATA_INVALID_ERROR, str(e)))
+            wsapp.close(status=WS_GOING_AWAY_CLOSE)
 
     def stop(self):
         log.info('FB Python SDK: Streaming is stopping...')
@@ -289,4 +333,7 @@ class Streaming(Thread, UpdateProcessor):
 
     @property
     def initialized(self) -> bool:
-        return self.__ready.is_set()
+        # ``ready`` only means the constructor may stop waiting. A terminal
+        # connection error also sets it, so storage is the source of truth for
+        # whether usable flag data has been received.
+        return self.__storage.initialized

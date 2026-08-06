@@ -290,3 +290,34 @@ def test_variation_error_default_value():
 def test_invalid_external_json_does_not_raise():
     with make_fb_client_offline() as client:
         assert client.initialize_from_external_json("{") is False
+
+
+def test_configured_boolean_default_is_used_for_missing_flag():
+    config = Config(FAKE_ENV_SECRET,
+                    event_url=FAKE_URL,
+                    streaming_url=FAKE_URL,
+                    defaults={"missing": True},
+                    update_processor_imp=NullUpdateProcessor,
+                    event_processor_imp=NullEventProcessor)
+    with FBClient(config) as client:
+        assert client.variation("missing", USER_1, False) is True
+
+
+def test_unserializable_json_default_does_not_raise():
+    fallback = {"value"}
+    with make_fb_client_offline() as client:
+        assert client.variation("ff-not-existed", USER_1, fallback) is fallback
+
+
+def test_empty_offline_bootstrap_controls_initialization_state():
+    config = Config(FAKE_ENV_SECRET,
+                    event_url=FAKE_URL,
+                    streaming_url=FAKE_URL,
+                    offline=True)
+    with FBClient(config) as client:
+        assert not client.initialize
+        empty_data = ('{"messageType":"data-sync","data":'
+                      '{"eventType":"full","featureFlags":[],"segments":[]}}')
+        assert client.initialize_from_external_json(empty_data)
+        assert client.initialize
+        assert client.update_status_provider.wait_for_OKState(0.1)

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from threading import Event
 from typing import Any, Callable, Dict, Optional, Tuple
 
@@ -145,10 +146,10 @@ class Config:
         self.__streaming_first_retry_delay = 1.0 if streaming_first_retry_delay is None or streaming_first_retry_delay <= 0 else min(
             streaming_first_retry_delay, 60.0)
         self.__offline = offline
-        self.__data_storage = data_storage if data_storage else InMemoryDataStorage()
+        self.__data_storage = data_storage if data_storage is not None else InMemoryDataStorage()
         self.__event_processor_imp = event_processor_imp
         self.__update_processor_imp = update_processor_imp
-        self.__events_max_in_queue = 10000 if events_max_in_queue is None else max(events_max_in_queue, 10000)
+        self.__events_max_in_queue = 10000 if events_max_in_queue is None or events_max_in_queue <= 0 else events_max_in_queue
         self.__events_flush_interval = 1.0 if events_flush_interval is None or events_flush_interval <= 0 else min(
             events_flush_interval, 3.0)
         self.__events_retry_interval = 0.1 if events_retry_interval is None or events_retry_interval <= 0 else min(
@@ -159,9 +160,10 @@ class Config:
         # clients created by unrelated applications or tests.
         self.__http = http if http is not None else HTTPConfig()
         self.__websocket = websocket if websocket is not None else WebSocketConfig()
-        self.__defaults = defaults if defaults is not None else {}
+        self.__defaults = deepcopy(defaults) if defaults is not None else {}
 
-    def copy_config_in_a_new_env(self, env_secret: str, defaults=None) -> 'Config':
+    def copy_config_in_a_new_env(self, env_secret: str, defaults=None,
+                                 data_storage: Optional[DataStorage] = None) -> 'Config':
         return Config(env_secret,
                       event_url=self.__event_url,
                       streaming_url=self.__streaming_url,
@@ -171,14 +173,17 @@ class Config:
                       events_retry_interval=self.__events_retry_interval,
                       events_max_retries=self.__events_max_retries,
                       offline=self.__offline,
-                      data_storage=self.__data_storage,
+                      # Environment data must never leak between clients. A
+                      # caller that intentionally wants a custom store can
+                      # still provide one explicitly.
+                      data_storage=data_storage,
                       update_processor_imp=self.__update_processor_imp,
                       event_processor_imp=self.__event_processor_imp,
-                      http=self.__http,
-                      websocket=self.__websocket,
+                      http=deepcopy(self.__http),
+                      websocket=deepcopy(self.__websocket),
                       defaults=defaults if defaults is not None else self.__defaults)
 
-    def get_default_value(self, key, default=None) -> Dict[str, Any]:
+    def get_default_value(self, key, default=None) -> Any:
         return self.__defaults.get(key, default)
 
     @property

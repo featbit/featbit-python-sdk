@@ -55,7 +55,8 @@ class HTTPFactory:
                                        headers=self.__headers,
                                        timeout=self.__timeout,
                                        cert_reqs=cert_reqs,
-                                       ca_certs=ca_certs)
+                                       ca_certs=ca_certs,
+                                       cert_file=self.__http_config.cert_file)
         else:
             url = urllib3.util.parse_url(proxy_url)
             if url.auth:
@@ -73,7 +74,8 @@ class HTTPFactory:
                                         proxy_headers=proxy_headers,
                                         timeout=self.__timeout,
                                         cert_reqs=cert_reqs,
-                                        ca_certs=ca_certs)
+                                        ca_certs=ca_certs,
+                                        cert_file=self.__http_config.cert_file)
 
 
 class DefaultSender(Sender):

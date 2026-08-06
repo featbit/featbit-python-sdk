@@ -29,7 +29,7 @@ log = logging.getLogger(sys.modules[__name__].__name__)
 ALPHABETS = {"0": "Q", "1": "B", "2": "W", "3": "S", "4": "P", "5": "H", "6": "D", "7": "X", "8": "Z", "9": "U"}
 
 
-def build_headers(env_secret: str, extra_headers={}):
+def build_headers(env_secret: str, extra_headers=None):
 
     def build_default_headers():
         return {
@@ -39,7 +39,7 @@ def build_headers(env_secret: str, extra_headers={}):
         }
 
     headers = build_default_headers()
-    headers.update(extra_headers)
+    headers.update(extra_headers if extra_headers is not None else {})
     return headers
 
 
@@ -65,7 +65,7 @@ def unix_timestamp_in_milliseconds():
     return int(round(time() * 1000))
 
 
-def valide_all_data(all_data={}) -> bool:
+def valide_all_data(all_data=None) -> bool:
     return isinstance(all_data, dict) \
         and all_data.get('messageType', 'pong') == 'data-sync' \
         and 'data' in all_data and isinstance(all_data['data'], dict) \

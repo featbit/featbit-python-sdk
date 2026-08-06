@@ -16,6 +16,7 @@ from fbclient.flag_change_notification import FlagTracker
 from fbclient.interfaces import DataUpdateStatusProvider
 from fbclient.notice_broadcaster import NoticeBroadcater
 from fbclient.status import DataUpdateStatusProviderImpl
+from fbclient.status_types import State
 from fbclient.streaming import Streaming, _data_to_dict
 from fbclient.update_processor import NullUpdateProcessor
 from fbclient.utils import (cast_variation_by_flag_type, check_uwsgi, log,
@@ -201,17 +202,17 @@ class FBClient:
         default_value = self._config.get_default_value(key, default)
         try:
             default_value_type = simple_type_inference(default_value)
+            if default_value is None:
+                return None, None
+            elif default_value_type == 'boolean':
+                return default_value_type, str(default_value).lower()
+            elif default_value_type == 'json':
+                return default_value_type, json.dumps(default_value)
+            else:
+                return default_value_type, str(default_value)
         except Exception:
             log.warning('FB Python SDK: unsupported default value; returning it unchanged on evaluation failure')
             return None, default_value
-        if default_value is None:
-            return None, None
-        elif default_value_type == 'boolean':
-            return default_value_type, str(default).lower()
-        elif default_value_type == 'json':
-            return default_value_type, json.dumps(default_value)
-        else:
-            return default_value_type, str(default_value)
 
     def _evaluate_internal(self, key: str, user: dict, default: Any = None) -> _EvalResult:
         default_value_type, default_value = self.__handle_default_value(key, default)
@@ -420,7 +421,9 @@ class FBClient:
                 all_data = json.loads(json_str)
                 if valide_all_data(all_data):
                     version, data = _data_to_dict(all_data['data'])
-                    return self._update_status_provider.init(data, version)
+                    if self._update_status_provider.init(data, version):
+                        self._update_status_provider.update_state(State.ok_state())
+                        return True
         except Exception:
             log.exception('FB Python SDK: invalid external bootstrap data')
 

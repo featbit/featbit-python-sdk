@@ -1,6 +1,8 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
-from fbclient.category import DATATEST
+from fbclient.category import DATATEST, FEATURE_FLAGS, SEGMENTS
 from fbclient.data_storage import InMemoryDataStorage
 
 
@@ -98,3 +100,31 @@ def test_invalid_upsert(data_storage):
     data_storage.upsert(DATATEST, "id_2", item_2, 1)
     assert data_storage.latest_version == 1
     assert data_storage.initialized
+
+
+def test_upsert_versions_are_compared_per_entity(data_storage):
+    first = {"id": "id_1", "timestamp": 1, "isArchived": False}
+    second = {"id": "id_2", "timestamp": 1, "isArchived": False}
+    stale = {"id": "id_1", "timestamp": 1, "isArchived": False, "name": "stale"}
+
+    assert data_storage.upsert(DATATEST, "id_1", first, 1)
+    assert data_storage.upsert(DATATEST, "id_2", second, 1)
+    assert not data_storage.upsert(DATATEST, "id_1", stale, 1)
+    assert len(data_storage.get_all(DATATEST)) == 2
+
+
+def test_empty_full_snapshot_initializes_storage(data_storage):
+    assert data_storage.init({FEATURE_FLAGS: {}, SEGMENTS: {}}, 0)
+    assert data_storage.initialized
+    assert data_storage.latest_version == 0
+
+
+def test_concurrent_same_version_upserts_do_not_lose_entities(data_storage):
+    def upsert(index):
+        key = "id_%s" % index
+        item = {"id": key, "timestamp": 1, "isArchived": False}
+        return data_storage.upsert(DATATEST, key, item, 1)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        assert all(executor.map(upsert, range(100)))
+    assert len(data_storage.get_all(DATATEST)) == 100

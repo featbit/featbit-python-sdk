@@ -57,31 +57,38 @@ class DefaultEventProcessor(EventProcessor):
             message.waitForComplete()
 
     def send_event(self, event: FBEvent):
-        if not self.__closed and event:
-            if isinstance(event, FlagEvent):
-                self.__put_message_async(MessageType.FLAGS, event)
-            elif isinstance(event, MetricEvent):
-                self.__put_message_async(MessageType.METRICS, event)
-            elif isinstance(event, UserEvent):
-                self.__put_message_async(MessageType.USER, event)
-            else:
-                log.debug('ignore unknown event type')
+        with self.__lock:
+            if not self.__closed and event:
+                if isinstance(event, FlagEvent):
+                    self.__put_message_async(MessageType.FLAGS, event)
+                elif isinstance(event, MetricEvent):
+                    self.__put_message_async(MessageType.METRICS, event)
+                elif isinstance(event, UserEvent):
+                    self.__put_message_async(MessageType.USER, event)
+                else:
+                    log.debug('ignore unknown event type')
 
     def flush(self):
-        if not self.__closed:
-            self.__put_message_async(MessageType.FLUSH)
+        with self.__lock:
+            if not self.__closed:
+                self.__put_message_async(MessageType.FLUSH)
 
     def stop(self):
         with self.__lock:
-            if not self.__closed:
-                log.info('FB Python SDK: event processor is stopping')
-                self.__closed = True
-                self.__flush_task.stop()
-                self.__put_message_async(MessageType.FLUSH)
-                self.__put_message_and_wait_terminate(MessageType.SHUTDOWN)
-                self.__dispatcher.join(5.0)
-                if self.__dispatcher.is_alive():
-                    log.warning('FB Python SDK: event dispatcher did not stop in time')
+            if self.__closed:
+                return
+            # Close the producer gate atomically so no application thread can
+            # append an event behind the shutdown marker.
+            self.__closed = True
+        log.info('FB Python SDK: event processor is stopping')
+        self.__flush_task.stop()
+        # Shutdown itself performs a final synchronous flush. Unlike a normal
+        # FLUSH message, the shutdown marker is guaranteed to enter a full
+        # inbox, so accepted events cannot be stranded during close.
+        self.__put_message_and_wait_terminate(MessageType.SHUTDOWN)
+        self.__dispatcher.join(5.0)
+        if self.__dispatcher.is_alive():
+            log.warning('FB Python SDK: event dispatcher did not stop in time')
 
 
 class EventDispatcher(Thread):
@@ -168,16 +175,31 @@ class EventDispatcher(Thread):
 
     def __shutdown(self):
         if not self.__closed:
-            with self.__lock:
-                try:
+            try:
+                with self.__lock:
                     log.debug('event dispatcher is cleaning up thread and conn pool')
                     self.__wait_until_flush_playload_worker_down()
+                if self.__events_buffer_to_next_flush:
+                    payloads = list(self.__events_buffer_to_next_flush)
+                    self.__events_buffer_to_next_flush.clear()
+                    # All asynchronous workers are down, so a direct final
+                    # send is safe and guarantees delivery of the buffer that
+                    # existed when shutdown was accepted.
+                    FlushPayloadRunner(self.__config, self.__sender, payloads).run()
+                self.__closed = True
+            except Exception as e:
+                log.exception('FB Python SDK: unexpected error when closing event dispatcher: %s' % str(e))
+            finally:
+                try:
                     self.__closed = True
                     log.debug('flush worker pool is stopping...')
                     self.__flush_workers.shutdown(wait=True)
+                except Exception:
+                    log.exception('FB Python SDK: could not stop event flush workers')
+                try:
                     self.__sender.stop()
-                except Exception as e:
-                    log.exception('FB Python SDK: unexpected error when closing event dispatcher: %s' % str(e))
+                except Exception:
+                    log.exception('FB Python SDK: could not stop event sender')
 
     def __wait_until_flush_playload_worker_down(self):
         while self.__permits._value != self.__MAX_FLUSH_WORKERS_NUMBER:

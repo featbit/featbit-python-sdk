@@ -24,19 +24,22 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
 
     def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
         try:
-            self.__storage.init(all_data, version)
+            result = self.__storage.init(all_data, version)
         except Exception as e:
             self.__handle_exception(e, DATA_STORAGE_INIT_ERROR, str(e))
             return False
-        return True
+        # Existing custom stores may return None because older versions of the
+        # interface did not declare a result. Only an explicit False means the
+        # update was rejected.
+        return result is not False
 
     def upsert(self, kind: Category, key: str, item: dict, version: int = 0) -> bool:
         try:
-            self.__storage.upsert(kind, key, item, version)
+            result = self.__storage.upsert(kind, key, item, version)
         except Exception as e:
             self.__handle_exception(e, DATA_STORAGE_UPDATE_ERROR, str(e))
             return False
-        return True
+        return result is not False
 
     def __handle_exception(self, error: Exception, error_type: str, message: str):
         log.exception('FB Python SDK: Data Storage error: %s, UpdateProcessor will attempt to receive the data' % str(error))
