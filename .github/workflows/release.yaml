@@ -17,31 +17,27 @@ on:
 
 jobs:
   deploy:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     environment: py-production
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Read current version
         id: version
-        uses: ashley-taylor/read-json-property-action@v1.1
-        with:
-          path: ./release/package.json
-          property: version
-      - name: Read realease description
-        id: description
-        uses: juliangruber/read-file-action@v1.1.6
-        with:
-          path: ./release/description.md
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          with open("release/package.json") as file:
+              print("value=%s" % json.load(file)["version"])
+          PY
       - name: Create GitHub Release
-        uses: actions/create-release@latest
         env:
-          GITHUB_TOKEN: ${{ secrets.PROJECT_RELEASE_TOKEN }}
-        with:
-            tag_name: v${{steps.version.outputs.value}}
-            release_name: v${{steps.version.outputs.value}}
-            body: ${{steps.description.outputs.content}}
-            draft: false
-            prerelease: false
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.value }}" \
+            --title "v${{ steps.version.outputs.value }}" \
+            --notes-file release/description.md
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
