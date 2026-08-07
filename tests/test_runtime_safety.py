@@ -1,4 +1,5 @@
 import base64
+import queue
 import threading
 from time import sleep
 from concurrent.futures import ThreadPoolExecutor
@@ -12,6 +13,7 @@ from fbclient.notice_broadcaster import NoticeBroadcater
 from fbclient.status import DataUpdateStatusProviderImpl
 from fbclient.status_types import State, StateType
 from fbclient.streaming import Streaming
+import fbclient.streaming as streaming_module
 from fbclient.update_processor import NullUpdateProcessor
 from fbclient.utils.http_client import build_http_factory
 from fbclient.utils.repeatable_task import RepeatableTask
@@ -99,6 +101,58 @@ def test_notice_broadcaster_is_safe_during_listener_churn():
     assert callback_count[0] >= 0
 
 
+def test_notice_broadcast_cannot_be_overtaken_by_shutdown(monkeypatch):
+    class PausingQueue:
+        def __init__(self):
+            self.inner = queue.Queue()
+            self.target = None
+            self.target_started = threading.Event()
+            self.release_target = threading.Event()
+
+        def put(self, item, *args, **kwargs):
+            if item is self.target:
+                self.target_started.set()
+                self.release_target.wait(1.0)
+            self.inner.put(item, *args, **kwargs)
+
+        def get(self, *args, **kwargs):
+            return self.inner.get(*args, **kwargs)
+
+    controlled_queue = PausingQueue()
+    monkeypatch.setattr("fbclient.notice_broadcaster.Queue",
+                        lambda: controlled_queue)
+    broadcaster = NoticeBroadcater()
+    received = threading.Event()
+
+    class Notice:
+        notice_type = "test"
+
+    notice = Notice()
+    controlled_queue.target = notice
+    broadcaster.add_listener("test", lambda _notice: received.set())
+
+    broadcaster_thread = threading.Thread(
+        target=lambda: broadcaster.broadcast(notice)
+    )
+    broadcaster_thread.start()
+    assert controlled_queue.target_started.wait(1.0)
+
+    stopped = threading.Event()
+
+    def stop_broadcaster():
+        broadcaster.stop()
+        stopped.set()
+
+    stopper = threading.Thread(target=stop_broadcaster)
+    stopper.start()
+    assert not stopped.wait(0.05)
+    controlled_queue.release_target.set()
+    broadcaster_thread.join(1.0)
+    stopper.join(1.0)
+    assert stopped.is_set()
+    assert received.wait(1.0)
+
+
 def test_client_public_event_and_shutdown_calls_do_not_raise():
     class FailingEventProcessor:
         def send_event(self, _event):
@@ -176,6 +230,56 @@ def test_status_listener_can_reenter_client_stop_without_deadlock():
     assert stopped_components == ["update"]
 
 
+def test_concurrent_client_stop_waits_for_cleanup():
+    stop_entered = threading.Event()
+    release_stop = threading.Event()
+
+    class BlockingUpdateProcessor:
+        def __init__(self, _config, status_provider, ready):
+            self.status_provider = status_provider
+            self.ready = ready
+
+        def start(self):
+            self.ready.set()
+            self.status_provider.update_state(State.ok_state())
+
+        def stop(self):
+            stop_entered.set()
+            release_stop.wait(1.0)
+
+        @property
+        def initialized(self):
+            return True
+
+    config = Config(
+        FAKE_ENV_SECRET,
+        event_url=FAKE_URL,
+        streaming_url=FAKE_URL,
+        update_processor_imp=BlockingUpdateProcessor,
+        event_processor_imp=lambda config, sender: NullEventProcessor(
+            config, sender
+        ),
+    )
+    client = FBClient(config)
+    first_done = threading.Event()
+    second_done = threading.Event()
+    first = threading.Thread(
+        target=lambda: (client.stop(), first_done.set())
+    )
+    second = threading.Thread(
+        target=lambda: (client.stop(), second_done.set())
+    )
+    first.start()
+    assert stop_entered.wait(1.0)
+    second.start()
+    assert not second_done.wait(0.05)
+    release_stop.set()
+    first.join(1.0)
+    second.join(1.0)
+    assert first_done.is_set()
+    assert second_done.is_set()
+
+
 def test_streaming_stop_interrupts_network_wait(monkeypatch):
     connected = threading.Event()
 
@@ -221,6 +325,7 @@ def test_config_copy_uses_independent_storage_and_exact_queue_capacity():
         base64.b64encode(b"other-environment").decode()
     )
     assert original.events_max_in_queue == 1
+    assert copied.events_max_in_queue == 1
     assert copied.data_storage is not original.data_storage
     assert copied.http is not original.http
     assert copied.websocket is not original.websocket
@@ -326,3 +431,42 @@ def test_streaming_restores_websocket_global_timeout_after_open(monkeypatch):
     finally:
         streaming.stop()
         broadcaster.stop()
+
+
+def test_streaming_does_not_block_on_another_clients_timeout_lock(monkeypatch):
+    connected = threading.Event()
+
+    class OpenWebSocketApp:
+        def __init__(self, _url, **callbacks):
+            self.on_open = callbacks["on_open"]
+            self.closed = threading.Event()
+            self.sock = None
+
+        def run_forever(self, **_kwargs):
+            self.on_open(self)
+            connected.set()
+            self.closed.wait(1.0)
+
+        def send(self, _message):
+            pass
+
+        def close(self, status=None):
+            self.closed.set()
+
+    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp",
+                        OpenWebSocketApp)
+    assert streaming_module._WEBSOCKET_TIMEOUT_LOCK.acquire(timeout=1.0)
+    broadcaster = NoticeBroadcater()
+    streaming = Streaming(
+        Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL),
+        broadcaster,
+        DataUpdateStatusProviderImpl(InMemoryDataStorage()),
+        threading.Event(),
+    )
+    try:
+        streaming.start()
+        assert connected.wait(1.0)
+    finally:
+        streaming.stop()
+        broadcaster.stop()
+        streaming_module._WEBSOCKET_TIMEOUT_LOCK.release()

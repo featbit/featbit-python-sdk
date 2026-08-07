@@ -20,10 +20,10 @@ from fbclient.status_types import StateType  # noqa: E402
 
 
 def sdk_threads():
-    return sorted(
-        thread.name for thread in threading.enumerate()
+    return {
+        thread.ident: thread.name for thread in threading.enumerate()
         if thread.name.startswith("featbit-")
-    )
+    }
 
 
 def main():
@@ -89,13 +89,16 @@ def main():
         client.stop()
         client.stop()
 
-    leaked_threads = [
-        name for name in sdk_threads() if name not in baseline_threads
-    ]
+    current_threads = sdk_threads()
+    leaked_threads = sorted(
+        name for ident, name in current_threads.items()
+        if ident not in baseline_threads
+    )
+    after_close = client.update_status_provider.current_state.state_type
     result = {
         "ready": ready,
         "state_before_close": before_close.name,
-        "state_after_close": client.update_status_provider.current_state.state_type.name,
+        "state_after_close": after_close.name,
         "observed_state_changes": states,
         "flag_key": flag_key,
         "evaluations": evaluations,
@@ -103,7 +106,9 @@ def main():
         "leaked_sdk_threads": leaked_threads,
     }
     print(json.dumps(result, indent=2, sort_keys=True, default=str))
-    if before_close != StateType.OK or leaked_threads:
+    if (before_close != StateType.OK
+            or after_close != StateType.OFF
+            or leaked_threads):
         raise SystemExit(1)
 
 

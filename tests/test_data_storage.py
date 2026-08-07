@@ -114,9 +114,11 @@ def test_upsert_versions_are_compared_per_entity(data_storage):
 
 
 def test_empty_full_snapshot_initializes_storage(data_storage):
-    assert data_storage.init({FEATURE_FLAGS: {}, SEGMENTS: {}}, 0)
+    empty_snapshot = {FEATURE_FLAGS: {}, SEGMENTS: {}}
+    assert data_storage.init(empty_snapshot, 0)
     assert data_storage.initialized
     assert data_storage.latest_version == 0
+    assert data_storage.init(empty_snapshot, 0)
 
 
 def test_concurrent_same_version_upserts_do_not_lose_entities(data_storage):

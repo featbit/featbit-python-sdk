@@ -30,6 +30,10 @@ def main():
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--max-retained-bytes", type=int, default=2 * 1024 * 1024)
     args = parser.parse_args()
+    if args.evaluations < 1:
+        parser.error("--evaluations must be at least 1")
+    if args.workers < 1:
+        parser.error("--workers must be at least 1")
 
     baseline_threads = sdk_thread_ids()
     config = Config("resource-audit",
@@ -49,12 +53,17 @@ def main():
     tracemalloc.start()
     baseline_bytes = tracemalloc.get_traced_memory()[0]
     errors = []
-    per_worker = max(1, args.evaluations // args.workers)
+    per_worker, remainder = divmod(args.evaluations, args.workers)
+    workloads = [
+        per_worker + (1 if worker < remainder else 0)
+        for worker in range(args.workers)
+    ]
 
-    def evaluate(worker):
+    def evaluate(work):
+        worker, evaluation_count = work
         completed = 0
         try:
-            for index in range(per_worker):
+            for index in range(evaluation_count):
                 key = "audit-%s-%s" % (worker, index)
                 value = client.variation(
                     "ff-test-bool",
@@ -70,7 +79,7 @@ def main():
 
     started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        completed = sum(executor.map(evaluate, range(args.workers)))
+        completed = sum(executor.map(evaluate, enumerate(workloads)))
     elapsed = time.perf_counter() - started
     client.stop()
     client.stop()

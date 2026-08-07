@@ -166,3 +166,34 @@ def test_stop_flushes_accepted_events_when_inbox_is_full(mock_sender):
     assert info.is_contain_user("test-user-1")
     assert info.is_contain_user("test-user-2")
     assert mock_sender.closed
+
+
+def test_event_processor_can_stop_from_dispatcher_thread(mock_sender):
+    holder = {}
+
+    class SelfStoppingUserEvent(UserEvent):
+        @property
+        def is_send_event(self):
+            holder["processor"].stop()
+            return True
+
+    config = Config(FAKE_ENV_SECRET,
+                    event_url=FAKE_URL,
+                    streaming_url=FAKE_URL,
+                    events_flush_interval=3.0,
+                    events_max_in_queue=10)
+    processor = DefaultEventProcessor(config, mock_sender)
+    holder["processor"] = processor
+    processor.send_event(SelfStoppingUserEvent(FBUser.from_dict(USER_1)))
+
+    deadline = threading.Event()
+    for _ in range(100):
+        if mock_sender.closed:
+            break
+        deadline.wait(0.01)
+
+    assert mock_sender.closed
+    info = mock_sender.get_sending_json_info(timeout=0.2)
+    assert info is not None
+    assert info.size == 1
+    assert info.is_contain_user("test-user-1")

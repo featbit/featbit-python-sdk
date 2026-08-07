@@ -37,15 +37,25 @@ class InMemoryDataStorage(DataStorage):
     def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
         if (not all_data) or not isinstance(version, int) or version < 0:
             return False
+        snapshot_is_empty = not any(bool(items) for items in all_data.values())
         # A version-zero snapshot is valid only when the environment is empty.
         # This is how the service represents a successful full sync containing
         # no flags or segments.
-        if version == 0 and any(bool(items) for items in all_data.values()):
+        if version == 0 and not snapshot_is_empty:
             return False
         try:
             self.__rw_lock.write_lock()
-            if self.__initialized and version <= self.__version:
-                return False
+            if self.__initialized:
+                if (version == self.__version == 0
+                        and snapshot_is_empty
+                        and not any(bool(items)
+                                    for items in self.__storage.values())):
+                    # Empty environments repeatedly send the same version-zero
+                    # full snapshot after reconnecting. Treat it as an accepted
+                    # no-op instead of forcing another reconnect.
+                    return True
+                if version <= self.__version:
+                    return False
             self.__storage.clear()
             self.__storage.update(all_data)  # type: ignore
             self.__initialized = True

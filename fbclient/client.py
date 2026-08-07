@@ -70,6 +70,8 @@ class FBClient:
 
         self._config = config
         self._stop_lock = threading.Lock()
+        self._stop_complete = threading.Event()
+        self._stop_owner = None
         self._closed = False
         if self._config.is_offline:
             log.info("FB Python SDK: SDK is in offline mode")
@@ -166,30 +168,46 @@ class FBClient:
 
         Do not attempt to use the client after calling this method.
         """
+        current_thread_id = threading.current_thread().ident
+        owns_shutdown = False
         with self._stop_lock:
             if self._closed:
-                return
-            # Mark the client closed atomically, then release the lock before
-            # invoking components. Component shutdown can synchronously
-            # publish status changes, and an application listener is allowed
-            # to call client.stop() again. Holding a non-reentrant lock across
-            # that callback would deadlock.
-            self._closed = True
+                # A recursive call from a synchronous shutdown callback must
+                # return immediately. Unrelated callers wait until the owner
+                # has released every SDK resource.
+                if self._stop_owner == current_thread_id:
+                    return
+            else:
+                self._closed = True
+                self._stop_owner = current_thread_id
+                owns_shutdown = True
 
-        log.info("FB Python SDK: Python SDK client is closing...")
-        # Stop producers before consumers, and isolate every component so one
-        # extension failure cannot prevent the remaining resources from being
-        # released or escape into application shutdown code. No user callback
-        # is invoked while the client lifecycle lock is held.
-        for name, component in (
-                ('update processor', self._update_processor),
-                ('event processor', self._event_processor),
-                ('notice broadcaster', self._broadcaster),
-                ('data storage', self._data_storage)):
-            try:
-                component.stop()
-            except Exception:
-                log.exception('FB Python SDK: %s failed to stop' % name)
+        if not owns_shutdown:
+            self._stop_complete.wait()
+            return
+
+        try:
+            # The client was marked closed atomically above. Component
+            # shutdown can synchronously publish status changes, and an
+            # application listener is allowed to call client.stop() again, so
+            # no component method may run under the lifecycle lock.
+            log.info("FB Python SDK: Python SDK client is closing...")
+            # Stop producers before consumers, and isolate every component so
+            # one extension failure cannot prevent the remaining resources
+            # from being released or escape into application shutdown code.
+            for name, component in (
+                    ('update processor', self._update_processor),
+                    ('event processor', self._event_processor),
+                    ('notice broadcaster', self._broadcaster),
+                    ('data storage', self._data_storage)):
+                try:
+                    component.stop()
+                except Exception:
+                    log.exception('FB Python SDK: %s failed to stop' % name)
+        finally:
+            with self._stop_lock:
+                self._stop_owner = None
+            self._stop_complete.set()
 
     def __enter__(self):
         return self

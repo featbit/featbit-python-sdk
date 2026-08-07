@@ -189,6 +189,10 @@ if client.initialize:
 
 > **Note**
 > If evaluation happened before the client is initialized, or you provide the wrong flag key/user for evaluation, the `variation` calls will return the default value. The `fbclient.common_types.EvalDetail` will explain the details of the latest evaluation including error reason.
+> Runtime evaluation does not raise solely because a supplied default has an
+> unsupported type. If no flag value can be produced, that default object is
+> returned unchanged and a diagnostic message is logged. Required client
+> configuration remains fail-fast during construction.
 
 ### Flag Tracking
 

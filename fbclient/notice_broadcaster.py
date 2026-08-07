@@ -52,7 +52,9 @@ class NoticeBroadcater:
         with self.__lock:
             if self.__closed:
                 return
-        self.__notice_queue.put(notice)
+            # Keep acceptance and enqueue atomic with stop(). Otherwise the
+            # shutdown sentinel can overtake the final accepted notice.
+            self.__notice_queue.put(notice)
 
     def stop(self):
         log.debug('notice broadcaster stopping...')

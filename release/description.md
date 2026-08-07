@@ -3,7 +3,11 @@ version: 1.1.8
 
 ## Break changes
 
-No Break changes
+- Runtime evaluation methods no longer raise `ValueError` solely because a
+  supplied fallback has an unsupported type. If evaluation cannot produce a
+  flag value, the original fallback object is returned unchanged and the SDK
+  logs a diagnostic message. This intentional behavior change keeps runtime
+  SDK failures from escaping into application request paths.
 
 ## New features
 

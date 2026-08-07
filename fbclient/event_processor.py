@@ -1,7 +1,7 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from queue import Empty, Full, Queue
-from threading import BoundedSemaphore, Condition, Lock, Thread
+from threading import BoundedSemaphore, Condition, Event, Lock, Thread, current_thread
 from typing import List, Optional
 
 from fbclient.common_types import FBEvent
@@ -11,6 +11,9 @@ from fbclient.event_types import (EventMessage, FlagEvent, MessageType,
 from fbclient.interfaces import EventProcessor, Sender
 from fbclient.utils import log
 from fbclient.utils.repeatable_task import RepeatableTask
+
+
+_THREAD_JOIN_TIMEOUT_SECONDS = 5.0
 
 
 class DefaultEventProcessor(EventProcessor):
@@ -82,11 +85,18 @@ class DefaultEventProcessor(EventProcessor):
             self.__closed = True
         log.info('FB Python SDK: event processor is stopping')
         self.__flush_task.stop()
+        if current_thread() is self.__dispatcher:
+            # A synchronous shutdown message cannot be consumed while this
+            # thread is still executing stop(). Ask the dispatcher loop to
+            # drain everything accepted before the producer gate closed and
+            # then perform its normal shutdown sequence.
+            self.__dispatcher.request_shutdown()
+            return
         # Shutdown itself performs a final synchronous flush. Unlike a normal
         # FLUSH message, the shutdown marker is guaranteed to enter a full
         # inbox, so accepted events cannot be stranded during close.
         self.__put_message_and_wait_terminate(MessageType.SHUTDOWN)
-        self.__dispatcher.join(5.0)
+        self.__dispatcher.join(_THREAD_JOIN_TIMEOUT_SECONDS)
         if self.__dispatcher.is_alive():
             log.warning('FB Python SDK: event dispatcher did not stop in time')
 
@@ -101,6 +111,7 @@ class EventDispatcher(Thread):
         self.__config = config
         self.__inbox = inbox
         self.__closed = False
+        self.__shutdown_requested = Event()
         self.__sender = sender
         self.__events_buffer_to_next_flush = []
         self.__flush_workers = ThreadPoolExecutor(max_workers=self.__MAX_FLUSH_WORKERS_NUMBER)
@@ -134,8 +145,17 @@ class EventDispatcher(Thread):
                         msg.completed()
                     if shutdown:
                         return  # exit the loop
+                # stop() can be called by code already running on this thread.
+                # Once producers are closed, an empty inbox means every event
+                # accepted before shutdown has now reached the buffer.
+                if self.__shutdown_requested.is_set() and self.__inbox.empty():
+                    self.__shutdown()
+                    return
             except Exception as outer:
                 log.exception('FB Python SDK: unexpected error in event dispatcher: %s' % str(outer))
+
+    def request_shutdown(self):
+        self.__shutdown_requested.set()
 
     def __drain_inbox(self, size=50) -> List[EventMessage]:
         msg = self.__inbox.get(block=True, timeout=None)

@@ -17,10 +17,10 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
         self.__current_state = State.intializing_state()
         self.__lock = threading.Condition(threading.Lock())
         self.__listeners: List[Callable[[State], None]] = []
-        self.__pending_notifications: Deque[
+        self.__notification_queue: Deque[
             Tuple[State, Tuple[Callable[[State], None], ...]]
         ] = deque()
-        self.__publishing_notifications = False
+        self.__is_publishing_notifications = False
 
     def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
         try:
@@ -80,11 +80,11 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
                 self.__current_state = State(new_state_type, state_since, error)
                 # wakes up all threads waiting for the ok state to check the new state
                 self.__lock.notify_all()
-                self.__pending_notifications.append(
+                self.__notification_queue.append(
                     (self.__current_state, tuple(self.__listeners))
                 )
-                if not self.__publishing_notifications:
-                    self.__publishing_notifications = True
+                if not self.__is_publishing_notifications:
+                    self.__is_publishing_notifications = True
                     publish_notifications = True
 
         if publish_notifications:
@@ -93,10 +93,10 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
     def __publish_pending_notifications(self):
         while True:
             with self.__lock:
-                if not self.__pending_notifications:
-                    self.__publishing_notifications = False
+                if not self.__notification_queue:
+                    self.__is_publishing_notifications = False
                     return
-                state, listeners = self.__pending_notifications.popleft()
+                state, listeners = self.__notification_queue.popleft()
 
             for listener in listeners:
                 try:

@@ -49,14 +49,14 @@ python scripts/resource_audit.py --evaluations 80000 --workers 8
 python -m build
 ```
 
-Result on Python 3.11.8 (2026-07-29):
+Result on Python 3.12.13 (2026-08-07):
 
-- 66 unit/integration tests passed.
+- 83 unit/integration tests passed.
 - Flake8 passed.
 - 80,000 evaluations across 8 workers completed with 0 concurrent errors.
-- Throughput was 11,425 evaluations/second on the final audit run.
+- Throughput was 12,490 evaluations/second on the final audit run.
 - No FeatBit SDK worker threads remained after shutdown.
-- 24,389 traced bytes remained after garbage collection, below the 2 MiB
+- 24,417 traced bytes remained after garbage collection, below the 2 MiB
   regression threshold.
 - A clean wheel built from the source distribution contained 27 files, no
   `tests/` package, and no stale `featbit_openfeature/` package.
@@ -95,6 +95,12 @@ state, processed the initial data-sync payload, evaluated the remote
 concurrent HTTP traffic, and later demonstrated automatic reconnection after a
 remote-host disconnect. The checked-in script turns that one-off validation
 into a repeatable, secret-safe release check.
+
+An additional run on 2026-08-07 used the official FeatBit Docker Compose stack.
+It observed a remotely pushed rollout update in 0.5 seconds, completed 4,000
+concurrent evaluations without errors, verified the default event-delivery
+path, handled a status listener that re-entered `client.stop()` without a
+deadlock, reached `OFF`, and left no SDK worker threads behind.
 
 ## Remaining operational considerations
 

@@ -123,7 +123,15 @@ class Streaming(Thread, UpdateProcessor):
         log.debug('Streaming WebSocket is connecting...')
 
     def __prepare_connection_timeout(self):
-        _WEBSOCKET_TIMEOUT_LOCK.acquire()
+        # websocket-client exposes connection timeout as process-global state.
+        # Never block one environment's streaming thread behind another
+        # environment's stalled connection attempt; in that case the second
+        # client proceeds with the timeout value already in effect.
+        if not _WEBSOCKET_TIMEOUT_LOCK.acquire(blocking=False):
+            log.warning('FB Python SDK: another WebSocket connection is '
+                        'configuring the process timeout; using the current '
+                        'timeout value')
+            return False
         with self.__timeout_state_lock:
             self.__timeout_lock_held = True
             self.__previous_websocket_timeout = websocket.getdefaulttimeout()
@@ -132,6 +140,7 @@ class Streaming(Thread, UpdateProcessor):
         except Exception:
             self.__restore_connection_timeout()
             raise
+        return True
 
     def __restore_connection_timeout(self):
         with self.__timeout_state_lock:
