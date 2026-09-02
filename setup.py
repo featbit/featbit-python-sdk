@@ -44,16 +44,14 @@ setup(
         'Operating System :: OS Independent',
         'Topic :: Software Development',
         'Topic :: Software Development :: Libraries',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
     ],
     extras_require={
         "dev": dev_reqs
     },
-    python_requires='>=3.6, <3.13'
+    python_requires='>=3.10, <3.15'
 )
