@@ -481,12 +481,14 @@ class _RecordingWebSocketApp:
 
 
 def _idle_streaming():
-    return Streaming(Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL), NoticeBroadcater(),
-                     DataUpdateStatusProviderImpl(InMemoryDataStorage()), threading.Event())
+    broadcaster = NoticeBroadcater()
+    streaming = Streaming(Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL), broadcaster,
+                          DataUpdateStatusProviderImpl(InMemoryDataStorage()), threading.Event())
+    return streaming, broadcaster
 
 
 def test_streaming_pong_message_keeps_connection_open():
-    streaming = _idle_streaming()
+    streaming, broadcaster = _idle_streaming()
     wsapp = _RecordingWebSocketApp()
     try:
         streaming._on_message(wsapp, '{"messageType":"pong","data":{}}')
@@ -494,10 +496,11 @@ def test_streaming_pong_message_keeps_connection_open():
         assert not streaming._Streaming__self_closed()
     finally:
         streaming.stop()
+        broadcaster.stop()
 
 
 def test_streaming_invalid_message_still_closes_with_data_invalid_state():
-    streaming = _idle_streaming()
+    streaming, broadcaster = _idle_streaming()
     wsapp = _RecordingWebSocketApp()
     try:
         streaming._on_message(wsapp, '{"messageType":"unknown","data":{}}')
@@ -507,3 +510,4 @@ def test_streaming_invalid_message_still_closes_with_data_invalid_state():
         assert self_closed.state.state_type == StateType.OFF
     finally:
         streaming.stop()
+        broadcaster.stop()
