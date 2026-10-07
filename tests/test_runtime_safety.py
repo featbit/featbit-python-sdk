@@ -470,3 +470,40 @@ def test_streaming_does_not_block_on_another_clients_timeout_lock(monkeypatch):
         streaming.stop()
         broadcaster.stop()
         streaming_module._WEBSOCKET_TIMEOUT_LOCK.release()
+
+
+class _RecordingWebSocketApp:
+    def __init__(self):
+        self.close_statuses = []
+
+    def close(self, status=None):
+        self.close_statuses.append(status)
+
+
+def _idle_streaming():
+    return Streaming(Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL), NoticeBroadcater(),
+                     DataUpdateStatusProviderImpl(InMemoryDataStorage()), threading.Event())
+
+
+def test_streaming_pong_message_keeps_connection_open():
+    streaming = _idle_streaming()
+    wsapp = _RecordingWebSocketApp()
+    try:
+        streaming._on_message(wsapp, '{"messageType":"pong","data":{}}')
+        assert wsapp.close_statuses == []
+        assert not streaming._Streaming__self_closed()
+    finally:
+        streaming.stop()
+
+
+def test_streaming_invalid_message_still_closes_with_data_invalid_state():
+    streaming = _idle_streaming()
+    wsapp = _RecordingWebSocketApp()
+    try:
+        streaming._on_message(wsapp, '{"messageType":"unknown","data":{}}')
+        assert wsapp.close_statuses == [streaming_module.WS_GOING_AWAY_CLOSE]
+        self_closed = streaming._Streaming__self_closed
+        assert self_closed() and not self_closed.is_reconn
+        assert self_closed.state.state_type == StateType.OFF
+    finally:
+        streaming.stop()
