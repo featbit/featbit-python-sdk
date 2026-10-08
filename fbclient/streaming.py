@@ -11,7 +11,7 @@ from fbclient.flag_change_notification import FlagChangedNotice
 from fbclient.interfaces import UpdateProcessor
 from fbclient.notice_broadcaster import NoticeBroadcater
 from fbclient.status import DataUpdateStatusProviderImpl
-from fbclient.status_types import (DATA_INVALID_ERROR, NETWORK_ERROR,
+from fbclient.status_types import (NETWORK_ERROR,
                                    REQUEST_INVALID_ERROR, RUNTIME_ERROR,
                                    SYSTEM_QUIT, UNKNOWN_CLOSE_CODE,
                                    UNKNOWN_ERROR, WEBSOCKET_ERROR, State)
@@ -302,19 +302,21 @@ class Streaming(Thread, UpdateProcessor):
         log.trace('Streaming WebSocket data: %s' % msg)  # type: ignore
         try:
             all_data = json.loads(msg)
-            if isinstance(all_data, dict) and all_data.get('messageType') == 'pong':
-                # keep-alive reply to our ping, not flag data
-                return
-            if not valide_all_data(all_data):
-                raise ValueError('invalid streaming data')
-            if not self._on_process_data(all_data['data']) and self.__wsapp:
-                # state already updated in init or upsert, just reconn
-                self.__self_closed = _SelfClosed(is_self_close=True, is_reconn=True, state=None)
-                wsapp.close(status=WS_GOING_AWAY_CLOSE)
-        except Exception as e:
-            self.__self_closed = _SelfClosed(is_self_close=True, is_reconn=False,
-                                             state=State.error_off_state(DATA_INVALID_ERROR, str(e)))
-            wsapp.close(status=WS_GOING_AWAY_CLOSE)
+        except Exception:
+            log.exception('FB Python SDK: could not parse data-sync message; skipping message: %r', msg)
+            return
+        if isinstance(all_data, dict) and all_data.get('messageType') == 'data-sync':
+            try:
+                self._handle_data_sync_message(wsapp, all_data)
+            except Exception:
+                log.exception('FB Python SDK: could not process data-sync message; skipping message: %r', all_data)
+
+    def _handle_data_sync_message(self, wsapp: websocket.WebSocketApp, all_data):
+        if not valide_all_data(all_data):
+            log.error('FB Python SDK: invalid data-sync message; skipping message: %r', all_data)
+            return
+        if not self._on_process_data(all_data['data']):
+            log.error('FB Python SDK: could not apply data-sync message; skipping message: %r', all_data)
 
     def stop(self):
         log.info('FB Python SDK: Streaming is stopping...')
