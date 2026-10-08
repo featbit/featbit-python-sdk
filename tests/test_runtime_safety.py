@@ -5,6 +5,8 @@ from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import pytest
+
 from fbclient.client import FBClient
 from fbclient.config import Config, HTTPConfig
 from fbclient.data_storage import InMemoryDataStorage
@@ -470,3 +472,88 @@ def test_streaming_does_not_block_on_another_clients_timeout_lock(monkeypatch):
         streaming.stop()
         broadcaster.stop()
         streaming_module._WEBSOCKET_TIMEOUT_LOCK.release()
+
+
+class _RecordingWebSocketApp:
+    def __init__(self):
+        self.close_statuses = []
+
+    def close(self, status=None):
+        self.close_statuses.append(status)
+
+
+def _idle_streaming():
+    broadcaster = NoticeBroadcater()
+    streaming = Streaming(Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL), broadcaster,
+                          DataUpdateStatusProviderImpl(InMemoryDataStorage()), threading.Event())
+    return streaming, broadcaster
+
+
+@pytest.mark.parametrize('message', [
+    '{"messageType":"pong","data":{}}',
+    '{"messageType":"unknown","data":{}}',
+    '{"data":{}}',
+    '[]',
+    'null',
+])
+def test_streaming_non_data_sync_message_keeps_connection_open(message):
+    streaming, broadcaster = _idle_streaming()
+    wsapp = _RecordingWebSocketApp()
+    try:
+        streaming._on_message(wsapp, message)
+        assert wsapp.close_statuses == []
+        assert not streaming._Streaming__self_closed()
+    finally:
+        streaming.stop()
+        broadcaster.stop()
+
+
+@pytest.mark.parametrize('message', [
+    'invalid json',
+    '{"messageType":"data-sync","data":{}}',
+    '{"messageType":"data-sync","data":null}',
+])
+def test_streaming_invalid_message_is_logged_and_next_sync_is_processed(message, mocker):
+    streaming, broadcaster = _idle_streaming()
+    wsapp = _RecordingWebSocketApp()
+    process_data = mocker.patch.object(streaming, '_on_process_data', return_value=True)
+    error_log = mocker.patch.object(streaming_module.log, 'error')
+    exception_log = mocker.patch.object(streaming_module.log, 'exception')
+    try:
+        streaming._on_message(wsapp, message)
+        assert wsapp.close_statuses == []
+        assert not streaming._Streaming__self_closed()
+        process_data.assert_not_called()
+        assert error_log.called or exception_log.called
+
+        streaming._on_message(wsapp, '{"messageType":"data-sync","data":'
+                              '{"eventType":"full","featureFlags":[],"segments":[]}}')
+        process_data.assert_called_once_with({'eventType': 'full', 'featureFlags': [], 'segments': []})
+        assert wsapp.close_statuses == []
+    finally:
+        streaming.stop()
+        broadcaster.stop()
+
+
+def test_streaming_data_processing_failure_keeps_connection_open(mocker):
+    streaming, broadcaster = _idle_streaming()
+    wsapp = _RecordingWebSocketApp()
+    streaming._Streaming__wsapp = wsapp
+    process_data = mocker.patch.object(streaming, '_on_process_data', side_effect=[False, True])
+    error_log = mocker.patch.object(streaming_module.log, 'error')
+    message = ('{"messageType":"data-sync","data":'
+               '{"eventType":"full","featureFlags":[],"segments":[]}}')
+    try:
+        streaming._on_message(wsapp, message)
+        assert wsapp.close_statuses == []
+        assert not streaming._Streaming__self_closed()
+        error_log.assert_called_once()
+
+        streaming._on_message(wsapp, message)
+        assert process_data.call_count == 2
+        assert wsapp.close_statuses == []
+        assert not streaming._Streaming__self_closed()
+        error_log.assert_called_once()
+    finally:
+        streaming.stop()
+        broadcaster.stop()
