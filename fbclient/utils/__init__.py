@@ -67,7 +67,7 @@ def unix_timestamp_in_milliseconds():
 
 def valide_all_data(all_data=None) -> bool:
     return isinstance(all_data, dict) \
-        and all_data.get('messageType', 'pong') == 'data-sync' \
+        and all_data.get('messageType') == 'data-sync' \
         and 'data' in all_data and isinstance(all_data['data'], dict) \
         and all(k in all_data['data'] for k in ('eventType', 'featureFlags', 'segments')) \
         and any(k == all_data['data']['eventType'] for k in ('full', 'patch')) \
