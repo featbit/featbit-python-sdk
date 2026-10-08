@@ -1,5 +1,11 @@
 # FeatBit Server-Side SDK for Python
 
+> **Important upgrade notice:** Versions **1.1.8 and 1.1.9** contain a streaming
+> regression that can stop flag updates after the first heartbeat, leaving
+> applications evaluating cached values. Online streaming users should upgrade to
+> **1.1.10** as soon as it is available and update pinned dependencies or lock files.
+> See [issue #18](https://github.com/featbit/featbit-python-sdk/issues/18).
+
 ## Introduction
 
 This is the Python Server-Side SDK for the 100% open-source feature flags management platform [FeatBit](https://github.com/featbit/featbit).

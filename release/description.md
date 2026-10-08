@@ -1,26 +1,7 @@
+## Bug Fixes
 
-version: 1.1.9
+- Fix a streaming regression introduced in 1.1.8 where flag updates stopped shortly after startup, leaving applications evaluating stale values. Flag updates now continue normally. (#18, #19)
 
-## Break changes
+Users running online streaming mode with **1.1.8 or 1.1.9** should upgrade to **1.1.10** as soon as it is available and update pinned dependencies or lock files as needed.
 
-- Runtime evaluation methods no longer raise `ValueError` solely because a
-  supplied fallback has an unsupported type. If evaluation cannot produce a
-  flag value, the original fallback object is returned unchanged and the SDK
-  logs a diagnostic message. This intentional behavior change keeps runtime
-  SDK failures from escaping into application request paths.
-
-## New features
-
-- expose the stable variation ID in evaluation details
-- add data-update status change listeners
-
-## Updates
-
-- support and test CPython versions 3.13 and 3.14
-- align the supported Python range with 3.10 through 3.14
-- require urllib3 1.26.5 or newer and lower than 3
-- handle Python versions 3.12.x
-- make client, WebSocket, event, and notice shutdown deterministic and idempotent
-- isolate runtime event and shutdown failures from application code
-- add concurrency, memory-retention, thread-lifecycle, and live-service audit tools
-- exclude the test package from production wheels
+**Full Changelog**: https://github.com/featbit/featbit-python-sdk/compare/v1.1.9...v1.1.10
