@@ -1,26 +1,36 @@
+version: 1.1.10
 
-version: 1.1.9
+## Important upgrade notice
 
-## Break changes
+Versions 1.1.8 and 1.1.9 contain a streaming regression: the first server
+`pong` reply can close the WebSocket without reconnecting, stopping subsequent
+flag updates while applications continue evaluating cached values.
 
-- Runtime evaluation methods no longer raise `ValueError` solely because a
-  supplied fallback has an unsupported type. If evaluation cannot produce a
-  flag value, the original fallback object is returned unchanged and the SDK
-  logs a diagnostic message. This intentional behavior change keeps runtime
-  SDK failures from escaping into application request paths.
+Users running online streaming mode should upgrade to 1.1.10 as soon as it is
+available. Update pinned dependencies and lock files as needed.
 
-## New features
+```shell
+pip install --upgrade 'fb-python-sdk>=1.1.10'
+```
 
-- expose the stable variation ID in evaluation details
-- add data-update status change listeners
+## Fixes and behavior changes
 
-## Updates
+- Fix streaming stopping after the first ping/pong exchange.
+- Process only `data-sync` messages; ignore other message types, including `pong`.
+- Log and skip malformed JSON, invalid data-sync payloads, processing exceptions,
+  and unsuccessful data application without closing the WebSocket or triggering
+  reconnection from these message-handling paths.
+- Include message contents in error logs to aid diagnosis.
 
-- support and test CPython versions 3.13 and 3.14
-- align the supported Python range with 3.10 through 3.14
-- require urllib3 1.26.5 or newer and lower than 3
-- handle Python versions 3.12.x
-- make client, WebSocket, event, and notice shutdown deterministic and idempotent
-- isolate runtime event and shutdown failures from application code
-- add concurrency, memory-retention, thread-lifecycle, and live-service audit tools
-- exclude the test package from production wheels
+These changes intentionally replace the invalid-message close behavior introduced
+in 1.1.8. Skipped updates are not automatically retried by this change, and
+rejected data-sync messages do not explicitly change the data-update status.
+
+See [issue #18](https://github.com/featbit/featbit-python-sdk/issues/18) and
+[PR #19](https://github.com/featbit/featbit-python-sdk/pull/19).
+
+## Validation
+
+- Full unit test suite: 92 passed on CPython 3.12.
+- Local live-service check passed: flag changes continued to reach the SDK after
+  the first heartbeat, with the data-update status remaining `OK`.
