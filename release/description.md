@@ -1,7 +1,6 @@
 ## New Features
 
 - Support the per-flag `insightsEnabled` setting delivered by FeatBit. An explicit boolean `false` suppresses evaluation event collection without changing evaluation values, variation IDs, match reasons, or experiment eligibility. (#21)
-- Apply this setting to single evaluations and delayed events from `AllFlagStates.get()` and `get_variation()`. Full and incremental synchronization, as well as external JSON initialization, preserve the setting.
 
 ## Compatibility
 
