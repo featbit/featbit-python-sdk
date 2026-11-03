@@ -274,19 +274,6 @@ client.track_metric(user, event_name, numeric_value);
 Make sure `track_metric` is called after the related feature flag is evaluated by simply calling `variation` or `variation_detail`
 otherwise, the custom event may not be included into the experiment result.
 
-### Evaluation insights
-
-Feature flags received through full or incremental synchronization, or loaded from
-external JSON, can include `insightsEnabled`. Only the boolean value `false`
-disables evaluation event collection for that flag; missing, null, or non-boolean
-values default to enabled, matching the evaluation server.
-
-This applies to `variation`, `variation_detail`, and the delayed events from
-`AllFlagStates.get` / `get_variation`. Eligibility is captured when the flag is
-evaluated; later updates do not remove already collected events. Evaluation values,
-match reasons, experiment eligibility, `track_metric`, and `identify` are unchanged.
-Enabling insights does not override offline or closed-client event suppression.
-
 ## Getting support
 
 - If you have a specific question about using this sdk, we encourage you
