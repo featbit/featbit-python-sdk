@@ -133,6 +133,8 @@ class FBClient:
 
     def _send_event_safely(self, event):
         try:
+            if isinstance(event, FlagEvent) and not event.is_send_event:
+                return
             if not self._closed:
                 self._event_processor.send_event(event)
         except Exception:
@@ -273,7 +275,7 @@ class FBClient:
     def variation(self, key: str, user: dict, default: Any = None) -> Any:
         """Return the variation of a feature flag for a given user.
 
-        This method will send an event back to feature flag center immediately if no error occurs.
+        This method collects an evaluation event if evaluation succeeds and insights are enabled for the flag.
 
         The default value should be a string, boolean, numeric, or json type.
 
@@ -297,7 +299,7 @@ class FBClient:
         """"Return the variation of a feature flag for a given user, but also provides additional information
          about how this value was calculated, in the property `data` of the :class:`fbclient.common_types.EvalDetail`.
 
-        This method will send an event back to feature flag center immediately if no error occurs.
+        This method collects an evaluation event if evaluation succeeds and insights are enabled for the flag.
 
         The default value should be a string, boolean, numeric, or json type.
 

@@ -232,7 +232,7 @@ class AllFlagStates(BasicFlagState, Jsonfy):
     def get_variation(self, key_name: str, default: Any = None) -> Any:
         """Return the variation of a given feature flag key
 
-        This method will send event to back to feature flag center immediately
+        This method submits the evaluation event only if insights were enabled when the flag was evaluated.
 
         The default value should be a string, boolean, numeric, or json type.
 
@@ -244,7 +244,7 @@ class AllFlagStates(BasicFlagState, Jsonfy):
     def get(self, key_name: str, default: Any = None) -> EvalDetail:
         """Return the flag evaluation details of a given feature flag key
 
-        This method will send event to back to feature flag center immediately
+        This method submits the evaluation event only if insights were enabled when the flag was evaluated.
 
         The default value should be a string, boolean, numeric, or json type.
 

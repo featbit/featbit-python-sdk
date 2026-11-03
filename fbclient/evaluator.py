@@ -95,7 +95,9 @@ class Evaluator:
         finally:
             if er is not None:
                 log.info('FB Python SDK: User %s, Feature Flag %s, Flag Value %s' % (user.get('KeyId'), er.key_name, er.value))
-                if fb_event is not None:
+                # Match the server default: only an explicit boolean false
+                # disables insights; evaluation and experiment eligibility stay unchanged.
+                if fb_event is not None and flag.get('insightsEnabled') is not False:
                     fb_event.add(FlagEventVariation(er))
 
     #  return a value when flag is off
