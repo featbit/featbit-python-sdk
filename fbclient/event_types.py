@@ -121,7 +121,6 @@ class FlagEvent(FBEvent):
         arr = []
         for variation in self.__variations:
             flag_json_dict = {'featureFlagKey': variation.variation.key_name,
-                              'sendToExperiment': variation.variation.is_send_to_expt,
                               'timestamp': variation.timestamp,
                               'variation': {
                                   'id': variation.variation.id,

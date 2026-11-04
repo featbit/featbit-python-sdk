@@ -66,8 +66,6 @@ __IS_IN_SEGMENT_CLAUSE__ = 'User is in segment'
 
 __NOT_IN_SEGMENT_CLAUSE__ = 'User is not in segment'
 
-__EXPT_KEY_PREFIX__ = "expt"
-
 
 class Evaluator:
     def __init__(self,
@@ -96,7 +94,7 @@ class Evaluator:
             if er is not None:
                 log.info('FB Python SDK: User %s, Feature Flag %s, Flag Value %s' % (user.get('KeyId'), er.key_name, er.value))
                 # Match the server default: only an explicit boolean false
-                # disables insights; evaluation and experiment eligibility stay unchanged.
+                # disables insights; evaluation stays unchanged.
                 if fb_event is not None and flag.get('insightsEnabled') is not False:
                     fb_event.add(FlagEventVariation(er))
 
@@ -106,7 +104,6 @@ class Evaluator:
             return _EvalResult(flag['disabledVariationId'],
                                flag['variationMap'][flag['disabledVariationId']],
                                REASON_FLAG_OFF,
-                               False,
                                flag['key'],
                                flag['name'],
                                flag['variationType'])
@@ -119,7 +116,6 @@ class Evaluator:
                 return _EvalResult(target['variationId'],
                                    flag['variationMap'][target['variationId']],
                                    REASON_TARGET_MATCH,
-                                   flag['exptIncludeAllTargets'],
                                    flag['key'],
                                    flag['name'],
                                    flag['variationType'])
@@ -269,36 +265,14 @@ class Evaluator:
                                       key_name: str,
                                       name: str) -> Optional[_EvalResult]:
 
-        def is_send_to_expt(dispatch_key: str,
-                            rollout: dict,
-                            expt_include_all_targets: bool,
-                            rule_inclued_in_expt: bool) -> bool:
-            if expt_include_all_targets:
-                return True
-            if rule_inclued_in_expt:
-                send_to_expt_percentage = rollout['exptRollout']
-                splitting_percentage = rollout['rollout'][1] - rollout['rollout'][0]
-
-                if send_to_expt_percentage == 0 or splitting_percentage == 0:
-                    return False
-
-                upper_bound = send_to_expt_percentage / splitting_percentage
-                if upper_bound > 1:
-                    upper_bound = 1
-                new_dispatch_key = "".join((__EXPT_KEY_PREFIX__, dispatch_key))
-                return VariationSplittingAlgorithm(new_dispatch_key, [0, upper_bound]).is_key_belongs_to_percentage()
-            return False
-
         dispatch_key = rollout_variations.get('dispatchKey')
         dispatch_key = dispatch_key if dispatch_key else 'keyid'
         dispatch_key_value = "".join((flag['key'], user.get(dispatch_key, "")))  # type: ignore
         for rollout in rollout_variations['variations']:
             if VariationSplittingAlgorithm(dispatch_key_value, rollout['rollout']).is_key_belongs_to_percentage():  # type: ignore
-                send_to_expt = is_send_to_expt(dispatch_key_value, rollout, flag['exptIncludeAllTargets'], rollout_variations['includedInExpt'])  # type: ignore
                 return _EvalResult(rollout['id'],
                                    flag['variationMap'][rollout['id']],
                                    reason,
-                                   send_to_expt,
                                    key_name,
                                    name,
                                    flag['variationType'])

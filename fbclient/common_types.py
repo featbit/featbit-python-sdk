@@ -285,7 +285,6 @@ class _EvalResult:
                  id: str,
                  value: Optional[str],
                  reason: str,
-                 is_send_to_expt: bool = False,
                  key_name: Optional[str] = None,
                  name: Optional[str] = None,
                  flag_type: Optional[str] = 'string'):
@@ -293,14 +292,13 @@ class _EvalResult:
         self.__id = id
         self.__value = value
         self.__reason = reason
-        self.__is_send_to_expt = is_send_to_expt
         self.__key_name = key_name
         self.__name = name
         self.__flag_type = flag_type
 
     @staticmethod
     def error(default_value: Optional[str], reason: str, key_name: Optional[str] = None, flag_type: Optional[str] = 'string'):
-        return _EvalResult(__NO_VARIATION__, default_value, reason, False, key_name if key_name else __FLAG_KEY_UNKNOWN__, __FLAG_NAME_UNKNOWN__, flag_type)
+        return _EvalResult(__NO_VARIATION__, default_value, reason, key_name if key_name else __FLAG_KEY_UNKNOWN__, __FLAG_NAME_UNKNOWN__, flag_type)
 
     @property
     def id(self) -> str:
@@ -313,10 +311,6 @@ class _EvalResult:
     @property
     def reason(self) -> str:
         return self.__reason
-
-    @property
-    def is_send_to_expt(self) -> bool:
-        return self.__is_send_to_expt
 
     @property
     def key_name(self) -> Optional[str]:

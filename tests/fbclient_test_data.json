@@ -24,7 +24,6 @@
             "id": "cf1ca836-a4ef-422e-8996-931aecd248a2",
             "name": "segment rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "User is in segment",
@@ -38,8 +37,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           }
@@ -48,19 +46,16 @@
         "disabledVariationId": "f62a3eae-e47f-481c-83eb-1b8fb3c39c9b",
         "fallthrough": {
           "dispatchKey": null,
-          "includedInExpt": true,
           "variations": [
             {
               "id": "f62a3eae-e47f-481c-83eb-1b8fb3c39c9b",
               "rollout": [
                 0,
                 1
-              ],
-              "exptRollout": 1
+              ]
             }
           ]
         },
-        "exptIncludeAllTargets": true,
         "tags": [],
         "isArchived": false,
         "disabledVariation": {
@@ -102,27 +97,23 @@
         "disabledVariationId": "43a1b83b-18df-42a6-971c-b2518455d8f2",
         "fallthrough": {
           "dispatchKey": "name",
-          "includedInExpt": true,
           "variations": [
             {
               "id": "18b369f8-453f-46d7-88cc-fe41d29ca6e3",
               "rollout": [
                 0,
                 0.5
-              ],
-              "exptRollout": 1
+              ]
             },
             {
               "id": "43a1b83b-18df-42a6-971c-b2518455d8f2",
               "rollout": [
                 0.5,
                 1
-              ],
-              "exptRollout": 1
+              ]
             }
           ]
         },
-        "exptIncludeAllTargets": true,
         "tags": [],
         "isArchived": false,
         "disabledVariation": {
@@ -164,7 +155,6 @@
             "id": "41402f94-64c9-4aca-9016-58a019a917c9",
             "name": "USA",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "country",
@@ -178,8 +168,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -187,7 +176,6 @@
             "id": "5a92deed-68db-4dc5-a8d1-721a275180c5",
             "name": "FRANCE",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "country",
@@ -201,8 +189,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -210,7 +197,6 @@
             "id": "5e0a88cd-7117-4d1c-972b-7dc9e747dddc",
             "name": "CHINA",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "country",
@@ -224,8 +210,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           }
@@ -234,19 +219,16 @@
         "disabledVariationId": "d1192640-dd82-4dbe-823e-88d7794b94ee",
         "fallthrough": {
           "dispatchKey": null,
-          "includedInExpt": true,
           "variations": [
             {
               "id": "d1192640-dd82-4dbe-823e-88d7794b94ee",
               "rollout": [
                 0,
                 1
-              ],
-              "exptRollout": 1
+              ]
             }
           ]
         },
-        "exptIncludeAllTargets": true,
         "tags": [],
         "isArchived": false,
         "disabledVariation": {
@@ -284,7 +266,6 @@
             "id": "ed5843e7-0f38-4d61-9945-b7dad6694601",
             "name": "Email",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "keyId",
@@ -298,8 +279,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -307,7 +287,6 @@
             "id": "08187230-7ad4-43c2-b830-b2d4269cecb1",
             "name": "CN Phone Number",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "keyId",
@@ -321,8 +300,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -330,7 +308,6 @@
             "id": "3fea476d-fb36-4bd1-8615-1b607926f314",
             "name": "FR Phone Number",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "keyId",
@@ -344,8 +321,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           }
@@ -354,19 +330,16 @@
         "disabledVariationId": "c4ed60ff-d195-415d-a657-3243286673b7",
         "fallthrough": {
           "dispatchKey": null,
-          "includedInExpt": true,
           "variations": [
             {
               "id": "c4ed60ff-d195-415d-a657-3243286673b7",
               "rollout": [
                 0,
                 1
-              ],
-              "exptRollout": 1
+              ]
             }
           ]
         },
-        "exptIncludeAllTargets": true,
         "tags": [],
         "isArchived": false,
         "disabledVariation": {
@@ -400,27 +373,23 @@
         "disabledVariationId": "0127cc87-99e2-4c46-98d9-5974a4fa1de1",
         "fallthrough": {
           "dispatchKey": "name",
-          "includedInExpt": true,
           "variations": [
             {
               "id": "255ee1b9-0290-4ffe-98f8-06c4b66f3608",
               "rollout": [
                 0,
                 0.25
-              ],
-              "exptRollout": 1
+              ]
             },
             {
               "id": "0127cc87-99e2-4c46-98d9-5974a4fa1de1",
               "rollout": [
                 0.25,
                 1
-              ],
-              "exptRollout": 1
+              ]
             }
           ]
         },
-        "exptIncludeAllTargets": true,
         "tags": [],
         "isArchived": false,
         "disabledVariation": {
@@ -454,19 +423,16 @@
         "disabledVariationId": "628ab219-b397-428b-84ce-a1734046c867",
         "fallthrough": {
           "dispatchKey": null,
-          "includedInExpt": true,
           "variations": [
             {
               "id": "ab9488b1-c6d0-444d-ad29-8738f9a5f1a3",
               "rollout": [
                 0,
                 1
-              ],
-              "exptRollout": 1
+              ]
             }
           ]
         },
-        "exptIncludeAllTargets": true,
         "tags": [],
         "isArchived": false,
         "disabledVariation": {
@@ -535,7 +501,6 @@
             "id": "d999869e-a287-414f-a13e-04accd03dc61",
             "name": "True Rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "graduated",
@@ -549,8 +514,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -558,7 +522,6 @@
             "id": "a8da5927-63ed-412b-8728-f950cc7f785e",
             "name": "Equal Rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "country",
@@ -572,8 +535,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -581,7 +543,6 @@
             "id": "a1a217c0-d91f-4ea2-b45f-993444ef743c",
             "name": "Than Rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "salary",
@@ -600,8 +561,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -609,7 +569,6 @@
             "id": "bfd4fca9-7131-4bcc-b7c2-c49c3146387c",
             "name": "Contain Rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "email",
@@ -623,8 +582,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -632,7 +590,6 @@
             "id": "9abbd28c-088a-4d9c-8b68-7d1f4494b18f",
             "name": "OneOf Rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "major",
@@ -646,8 +603,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -655,7 +611,6 @@
             "id": "d9cd384c-6282-482d-a43d-5d4461068e18",
             "name": "StartEnd Rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "name",
@@ -674,8 +629,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           },
@@ -683,7 +637,6 @@
             "id": "ecdc09b0-7aa0-485d-8498-990c8589c95c",
             "name": "MatchRegex Rule",
             "dispatchKey": null,
-            "includedInExpt": false,
             "conditions": [
               {
                 "property": "phone",
@@ -697,8 +650,7 @@
                 "rollout": [
                   0,
                   1
-                ],
-                "exptRollout": 1
+                ]
               }
             ]
           }
@@ -707,19 +659,16 @@
         "disabledVariationId": "ac21c2fc-eec4-4b49-ad80-cc525720166b",
         "fallthrough": {
           "dispatchKey": null,
-          "includedInExpt": true,
           "variations": [
             {
               "id": "ac21c2fc-eec4-4b49-ad80-cc525720166b",
               "rollout": [
                 0,
                 1
-              ],
-              "exptRollout": 1
+              ]
             }
           ]
         },
-        "exptIncludeAllTargets": true,
         "tags": [],
         "isArchived": false,
         "disabledVariation": {
