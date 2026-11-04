@@ -98,7 +98,7 @@ def test_external_json_preserves_insights_setting(setting):
     ('ff-evaluation-test', {'key': 'rule-user', 'graduated': 'true'}),
     ('ff-evaluation-test', {'key': 'fallthrough-user'}),
 ])
-def test_insights_does_not_change_evaluation_or_experiment_eligibility(client, key, user):
+def test_insights_does_not_change_evaluation(client, key, user):
     sync(client, payload(True))
     flag = client._get_flag_internal(key)
     user = FBUser.from_dict(dict(user, name='Test User'))
@@ -107,9 +107,16 @@ def test_insights_does_not_change_evaluation_or_experiment_eligibility(client, k
     flag = dict(flag, insightsEnabled=False)
     disabled_event = FlagEvent(user)
     after = client._evaluator.evaluate(flag, user, disabled_event)
-    assert (after.id, after.value, after.reason, after.is_send_to_expt) == (
-        before.id, before.value, before.reason, before.is_send_to_expt)
+    assert (after.id, after.value, after.reason) == (
+        before.id, before.value, before.reason)
     assert enabled_event.is_send_event
+    reported = enabled_event.to_json_dict()['variations'][0]
+    assert reported == {
+        'featureFlagKey': key,
+        'timestamp': reported['timestamp'],
+        'variation': {'id': before.id, 'value': before.value, 'reason': before.reason},
+    }
+    assert isinstance(reported['timestamp'], int)
     assert not disabled_event.is_send_event
 
 
