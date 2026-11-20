@@ -1,7 +1,7 @@
 from fbclient.client import FBClient
 from fbclient.config import Config
-from fbclient.utils.rwlock import ReadWriteLock
 from fbclient.utils import log
+from fbclient.utils.rwlock import ReadWriteLock
 
 """Settings."""
 start_wait = 15
@@ -61,7 +61,7 @@ def set_config(config: Config):
         __lock.write_lock()
         if __client:
             __client.stop()
-            log.info('FB Python SDK: FB Python Client is reinitializing...')
+            log.info("FB Python SDK: FB Python Client is reinitializing...")
             __client = FBClient(config, start_wait)
     finally:
         __config = config

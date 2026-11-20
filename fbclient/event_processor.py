@@ -6,12 +6,16 @@ from typing import List, Optional
 
 from fbclient.common_types import FBEvent
 from fbclient.config import Config
-from fbclient.event_types import (EventMessage, FlagEvent, MessageType,
-                                  MetricEvent, UserEvent)
+from fbclient.event_types import (
+    EventMessage,
+    FlagEvent,
+    MessageType,
+    MetricEvent,
+    UserEvent,
+)
 from fbclient.interfaces import EventProcessor, Sender
 from fbclient.utils import log
 from fbclient.utils.repeatable_task import RepeatableTask
-
 
 _THREAD_JOIN_TIMEOUT_SECONDS = 5.0
 
@@ -23,9 +27,11 @@ class DefaultEventProcessor(EventProcessor):
         self.__lock = Lock()
         self.__dispatcher = EventDispatcher(config, sender, self.__inbox)
         self.__dispatcher.start()
-        self.__flush_task = RepeatableTask('featbit-insight-flush', config.events_flush_interval, self.flush)
+        self.__flush_task = RepeatableTask(
+            "featbit-insight-flush", config.events_flush_interval, self.flush
+        )
         self.__flush_task.start()
-        log.debug('insight processor is ready')
+        log.debug("insight processor is ready")
 
     def __enter__(self):
         return self
@@ -45,18 +51,22 @@ class DefaultEventProcessor(EventProcessor):
             #  if it reaches here, it means the application is probably doing tons of flag
             #  evaluations across many threads -- so if we wait for a space in the inbox, we risk a very serious slowdown
             #  of the app. To avoid that, we'll just drop the event or you can increase the capacity of inbox
-            log.warning('FB Python SDK: Events are being produced faster than they can be processed; some events will be dropped')
+            log.warning(
+                "FB Python SDK: Events are being produced faster than they can be processed; some events will be dropped"
+            )
             return False
 
     def __put_message_async(self, type: MessageType, event: Optional[FBEvent] = None):
         message = EventMessage(type, event, False)
         if self.__put_message_to_inbox(message):
-            log.trace('put %s message to inbox' % str(type))  # type: ignore
+            log.trace("put %s message to inbox" % str(type))  # type: ignore
 
-    def __put_message_and_wait_terminate(self, type: MessageType, event: Optional[FBEvent] = None):
+    def __put_message_and_wait_terminate(
+        self, type: MessageType, event: Optional[FBEvent] = None
+    ):
         message = EventMessage(type, event, True)
         if self.__put_message_to_inbox(message):
-            log.debug('put %s WaitTermination message to inbox' % str(type))
+            log.debug("put %s WaitTermination message to inbox" % str(type))
             message.waitForComplete()
 
     def send_event(self, event: FBEvent):
@@ -69,7 +79,7 @@ class DefaultEventProcessor(EventProcessor):
                 elif isinstance(event, UserEvent):
                     self.__put_message_async(MessageType.USER, event)
                 else:
-                    log.debug('ignore unknown event type')
+                    log.debug("ignore unknown event type")
 
     def flush(self):
         with self.__lock:
@@ -83,7 +93,7 @@ class DefaultEventProcessor(EventProcessor):
             # Close the producer gate atomically so no application thread can
             # append an event behind the shutdown marker.
             self.__closed = True
-        log.info('FB Python SDK: event processor is stopping')
+        log.info("FB Python SDK: event processor is stopping")
         self.__flush_task.stop()
         if current_thread() is self.__dispatcher:
             # A synchronous shutdown message cannot be consumed while this
@@ -98,23 +108,24 @@ class DefaultEventProcessor(EventProcessor):
         self.__put_message_and_wait_terminate(MessageType.SHUTDOWN)
         self.__dispatcher.join(_THREAD_JOIN_TIMEOUT_SECONDS)
         if self.__dispatcher.is_alive():
-            log.warning('FB Python SDK: event dispatcher did not stop in time')
+            log.warning("FB Python SDK: event dispatcher did not stop in time")
 
 
 class EventDispatcher(Thread):
-
     __MAX_FLUSH_WORKERS_NUMBER = 5
     __BATCH_SIZE = 50
 
     def __init__(self, config: Config, sender: Sender, inbox: "Queue[EventMessage]"):
-        super().__init__(name='featbit-event-dispatcher', daemon=True)
+        super().__init__(name="featbit-event-dispatcher", daemon=True)
         self.__config = config
         self.__inbox = inbox
         self.__closed = False
         self.__shutdown_requested = Event()
         self.__sender = sender
         self.__events_buffer_to_next_flush = []
-        self.__flush_workers = ThreadPoolExecutor(max_workers=self.__MAX_FLUSH_WORKERS_NUMBER)
+        self.__flush_workers = ThreadPoolExecutor(
+            max_workers=self.__MAX_FLUSH_WORKERS_NUMBER
+        )
         self.__permits = BoundedSemaphore(value=self.__MAX_FLUSH_WORKERS_NUMBER)
         self.__lock = Condition(Lock())
 
@@ -123,14 +134,18 @@ class EventDispatcher(Thread):
     # 2: try to flush events to featureflag if a flush message arrives
     # 3: wait for releasing resources if a shutdown arrives
     def run(self):
-        log.debug('event dispatcher is working...')
+        log.debug("event dispatcher is working...")
         while True:
             try:
                 msgs = self.__drain_inbox(size=self.__BATCH_SIZE)
                 for msg in msgs:
                     shutdown = False
                     try:
-                        if msg.type == MessageType.FLAGS or msg.type == MessageType.METRICS or msg.type == MessageType.USER:
+                        if (
+                            msg.type == MessageType.FLAGS
+                            or msg.type == MessageType.METRICS
+                            or msg.type == MessageType.USER
+                        ):
                             self.__put_events_to_buffer(msg.event)  # type: ignore
                         elif msg.type == MessageType.FLUSH:
                             self.__trigger_flush()
@@ -138,7 +153,10 @@ class EventDispatcher(Thread):
                             self.__shutdown()
                             shutdown = True
                     except Exception as inner:
-                        log.exception('FB Python SDK: unexpected error in event dispatcher: %s' % str(inner))
+                        log.exception(
+                            "FB Python SDK: unexpected error in event dispatcher: %s"
+                            % str(inner)
+                        )
                     finally:
                         # Synchronous callers must never wait forever because a
                         # dispatcher operation failed.
@@ -152,7 +170,10 @@ class EventDispatcher(Thread):
                     self.__shutdown()
                     return
             except Exception as outer:
-                log.exception('FB Python SDK: unexpected error in event dispatcher: %s' % str(outer))
+                log.exception(
+                    "FB Python SDK: unexpected error in event dispatcher: %s"
+                    % str(outer)
+                )
 
     def request_shutdown(self):
         self.__shutdown_requested.set()
@@ -170,7 +191,7 @@ class EventDispatcher(Thread):
 
     def __put_events_to_buffer(self, event: FBEvent):
         if not self.__closed and event.is_send_event:
-            log.debug('put event to buffer')
+            log.debug("put event to buffer")
             self.__events_buffer_to_next_flush.append(event)
 
     def __trigger_flush(self):
@@ -180,15 +201,15 @@ class EventDispatcher(Thread):
                 self.__lock.notify_all()
 
         if not self.__closed and len(self.__events_buffer_to_next_flush) > 0:
-            log.debug('trigger flush')
+            log.debug("trigger flush")
             # get all the current events from event buffer
             if self.__permits.acquire(blocking=False):
                 payloads = []
                 payloads.extend(self.__events_buffer_to_next_flush)
                 # get an available flush worker to send events
-                self.__flush_workers \
-                    .submit(FlushPayloadRunner(self.__config, self.__sender, payloads).run) \
-                    .add_done_callback(flush_payload_done)
+                self.__flush_workers.submit(
+                    FlushPayloadRunner(self.__config, self.__sender, payloads).run
+                ).add_done_callback(flush_payload_done)
                 # clear the buffer for the next flush
                 self.__events_buffer_to_next_flush.clear()
             # if no available flush worker, keep the events in the buffer
@@ -197,7 +218,7 @@ class EventDispatcher(Thread):
         if not self.__closed:
             try:
                 with self.__lock:
-                    log.debug('event dispatcher is cleaning up thread and conn pool')
+                    log.debug("event dispatcher is cleaning up thread and conn pool")
                     self.__wait_until_flush_playload_worker_down()
                 if self.__events_buffer_to_next_flush:
                     payloads = list(self.__events_buffer_to_next_flush)
@@ -208,18 +229,21 @@ class EventDispatcher(Thread):
                     FlushPayloadRunner(self.__config, self.__sender, payloads).run()
                 self.__closed = True
             except Exception as e:
-                log.exception('FB Python SDK: unexpected error when closing event dispatcher: %s' % str(e))
+                log.exception(
+                    "FB Python SDK: unexpected error when closing event dispatcher: %s"
+                    % str(e)
+                )
             finally:
                 try:
                     self.__closed = True
-                    log.debug('flush worker pool is stopping...')
+                    log.debug("flush worker pool is stopping...")
                     self.__flush_workers.shutdown(wait=True)
                 except Exception:
-                    log.exception('FB Python SDK: could not stop event flush workers')
+                    log.exception("FB Python SDK: could not stop event flush workers")
                 try:
                     self.__sender.stop()
                 except Exception:
-                    log.exception('FB Python SDK: could not stop event sender')
+                    log.exception("FB Python SDK: could not stop event sender")
 
     def __wait_until_flush_playload_worker_down(self):
         while self.__permits._value != self.__MAX_FLUSH_WORKERS_NUMBER:
@@ -238,15 +262,22 @@ class FlushPayloadRunner:
         def partition(lst: List, size: int):
             for i in range(0, len(lst), size):
                 yield lst[i : i + size]
+
         try:
-            for payload in list(partition(self.__payloads, self.__MAX_EVENT_SIZE_PER_REQUEST)):
+            for payload in list(
+                partition(self.__payloads, self.__MAX_EVENT_SIZE_PER_REQUEST)
+            ):
                 payload_part = [event.to_json_dict() for event in payload]
                 json_str = json.dumps(payload_part)
                 log.trace(json_str)  # type: ignore
-                self.__sender.postJson(self.__config.events_uri, json_str, fetch_response=False)
-                log.debug('paload size: %s' % len(payload_part))
+                self.__sender.postJson(
+                    self.__config.events_uri, json_str, fetch_response=False
+                )
+                log.debug("paload size: %s" % len(payload_part))
         except Exception as e:
-            log.exception('FB Python SDK: unexpected error in sending payload: %s' % str(e))
+            log.exception(
+                "FB Python SDK: unexpected error in sending payload: %s" % str(e)
+            )
             return False
         return True
 

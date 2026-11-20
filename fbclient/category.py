@@ -19,11 +19,11 @@ class Category:
         return self._tag
 
 
-FEATURE_FLAGS = Category('featureFlags', 'ff')
+FEATURE_FLAGS = Category("featureFlags", "ff")
 
-SEGMENTS = Category('segments', 'seg')
+SEGMENTS = Category("segments", "seg")
 
-DATATEST = Category('datatest', 'test')
+DATATEST = Category("datatest", "test")
 
 """
 An enumeration of all supported types. Applications should not need to reference this object directly.
@@ -31,4 +31,4 @@ Custom data storage implementations can determine what kinds of model objects ma
 """
 ALL_CATS = [FEATURE_FLAGS, SEGMENTS, DATATEST]
 
-ALL_CAT_NAMES = ['featureFlags', 'segments', 'datatest']
+ALL_CAT_NAMES = ["featureFlags", "segments", "datatest"]

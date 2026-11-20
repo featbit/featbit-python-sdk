@@ -7,7 +7,6 @@ from fbclient.utils.rwlock import ReadWriteLock
 
 
 class InMemoryDataStorage(DataStorage):
-
     def __init__(self):
         self.__rw_lock = ReadWriteLock()
         self.__initialized = False
@@ -20,7 +19,7 @@ class InMemoryDataStorage(DataStorage):
             self.__rw_lock.read_lock()
             keyItems = self.__storage.get(kind, {})
             item = keyItems.get(key, None)
-            if (item is None) or item['isArchived']:
+            if (item is None) or item["isArchived"]:
                 return None
             return item
         finally:
@@ -30,11 +29,13 @@ class InMemoryDataStorage(DataStorage):
         try:
             self.__rw_lock.read_lock()
             keyItems = self.__storage.get(kind, {})
-            return dict((k, v) for k, v in keyItems.items() if not v['isArchived'])
+            return dict((k, v) for k, v in keyItems.items() if not v["isArchived"])
         finally:
             self.__rw_lock.release_read_lock()
 
-    def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
+    def init(
+        self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0
+    ) -> bool:
         if (not all_data) or not isinstance(version, int) or version < 0:
             return False
         snapshot_is_empty = not any(bool(items) for items in all_data.values())
@@ -46,10 +47,11 @@ class InMemoryDataStorage(DataStorage):
         try:
             self.__rw_lock.write_lock()
             if self.__initialized:
-                if (version == self.__version == 0
-                        and snapshot_is_empty
-                        and not any(bool(items)
-                                    for items in self.__storage.values())):
+                if (
+                    version == self.__version == 0
+                    and snapshot_is_empty
+                    and not any(bool(items) for items in self.__storage.values())
+                ):
                     # Empty environments repeatedly send the same version-zero
                     # full snapshot after reconnecting. Treat it as an accepted
                     # no-op instead of forcing another reconnect.
@@ -65,7 +67,13 @@ class InMemoryDataStorage(DataStorage):
             self.__rw_lock.release_write_lock()
 
     def upsert(self, kind: Category, key: str, item: dict, version: int = 0) -> bool:
-        if (not kind) or (not item) or (not key) or not isinstance(version, int) or version <= 0:
+        if (
+            (not kind)
+            or (not item)
+            or (not key)
+            or not isinstance(version, int)
+            or version <= 0
+        ):
             return False
         try:
             self.__rw_lock.write_lock()
@@ -74,7 +82,7 @@ class InMemoryDataStorage(DataStorage):
             # Patches are versioned per entity. Comparing with the global
             # latest version would incorrectly discard a different flag or
             # segment that happens to have the same timestamp.
-            if v is not None and v.get('timestamp', 0) >= version:
+            if v is not None and v.get("timestamp", 0) >= version:
                 return False
             keyItems[key] = item
             self.__version = max(self.__version, version)
@@ -105,14 +113,15 @@ class InMemoryDataStorage(DataStorage):
 
 
 class NullDataStorage(DataStorage):
-
     def get(self, kind: Category, key: str) -> Optional[dict]:
         return None
 
     def get_all(self, kind: Category) -> Mapping[str, dict]:
         return dict()
 
-    def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
+    def init(
+        self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0
+    ) -> bool:
         return True
 
     def upsert(self, kind: Category, key: str, item: dict, version: int = 0) -> bool:

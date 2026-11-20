@@ -7,24 +7,24 @@ from fbclient.status_types import State
 
 
 class UpdateProcessor(ABC):
-    '''
+    """
     Interface for the component that obtains feature flag data in some way and passes it to a
     :class:`DataStorage`. The built-in imp now of this is streaming, we will provide the polling update
     and file update soon
-    '''
+    """
 
     @abstractmethod
     def start(self):
-        '''
+        """
         Starts an operation in the background.
-        '''
+        """
         pass
 
     @abstractmethod
     def stop(self):
-        '''
+        """
         Stops an operation running in the background.
-        '''
+        """
         pass
 
     @property
@@ -37,13 +37,15 @@ class UpdateProcessor(ABC):
 
 
 class DataUpdateStatusProvider(ABC):
-    '''
+    """
     Interface for manipulating the data updates in :class: `DataStorage` and maintain the status of :class: `UpdateProcessor`.
     The implementation should be called in :class: `UpdateProcessor`.
-    '''
+    """
 
     @abstractmethod
-    def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
+    def init(
+        self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0
+    ) -> bool:
         """
         Manipulate the init operation in data storage. If the underlying data storage throws an error during this operation, the SDK will catch it, log it,
         and set the state of update process to INTERRUPTED. It will not rethrow the error to other level, but will simply return falseto indicate that the operation failed.
@@ -179,7 +181,9 @@ class DataStorage(ABC):
         pass
 
     @abstractmethod
-    def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
+    def init(
+        self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0
+    ) -> bool:
         """
         Init (or re-init by data update process) the storage with the specified set of data.
         Any existing entries will be removed if the new data set's version is greater than the current version
@@ -266,7 +270,9 @@ class Sender(ABC):
     """
 
     @abstractmethod
-    def postJson(self, url: str, json_str: str, fetch_response: bool = True) -> Optional[str]:
+    def postJson(
+        self, url: str, json_str: str, fetch_response: bool = True
+    ) -> Optional[str]:
         """
         Sends a json object via HTTP POST to the given URL
 
@@ -290,6 +296,7 @@ class Notice(ABC):
     This is not an insight event to be sent to FeatBit Flag Center; it is a notice to notify the SDK that something has happened,
     such as flag values updated
     """
+
     @property
     @abstractmethod
     def notice_type(self) -> str:

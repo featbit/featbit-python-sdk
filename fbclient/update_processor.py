@@ -1,12 +1,17 @@
 from threading import Event
+
 from fbclient.config import Config
 from fbclient.interfaces import DataUpdateStatusProvider, UpdateProcessor
 from fbclient.status_types import State
 
 
 class NullUpdateProcessor(UpdateProcessor):
-
-    def __init__(self, config: Config, dataUpdateStatusProvider: DataUpdateStatusProvider, ready: Event):
+    def __init__(
+        self,
+        config: Config,
+        dataUpdateStatusProvider: DataUpdateStatusProvider,
+        ready: Event,
+    ):
         self.__ready = ready
         self.__store = dataUpdateStatusProvider
         self.__offline = config.is_offline

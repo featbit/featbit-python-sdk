@@ -11,14 +11,24 @@ from fbclient.flag_change_notification import FlagChangedNotice
 from fbclient.interfaces import UpdateProcessor
 from fbclient.notice_broadcaster import NoticeBroadcater
 from fbclient.status import DataUpdateStatusProviderImpl
-from fbclient.status_types import (NETWORK_ERROR,
-                                   REQUEST_INVALID_ERROR, RUNTIME_ERROR,
-                                   SYSTEM_QUIT, UNKNOWN_CLOSE_CODE,
-                                   UNKNOWN_ERROR, WEBSOCKET_ERROR, State)
-from fbclient.utils import (build_headers, build_token,
-                            from_str_datetime_to_millis, log, valide_all_data)
-from fbclient.utils.exponential_backoff_jitter_strategy import \
-    BackoffAndJitterStrategy
+from fbclient.status_types import (
+    NETWORK_ERROR,
+    REQUEST_INVALID_ERROR,
+    RUNTIME_ERROR,
+    SYSTEM_QUIT,
+    UNKNOWN_CLOSE_CODE,
+    UNKNOWN_ERROR,
+    WEBSOCKET_ERROR,
+    State,
+)
+from fbclient.utils import (
+    build_headers,
+    build_token,
+    from_str_datetime_to_millis,
+    log,
+    valide_all_data,
+)
+from fbclient.utils.exponential_backoff_jitter_strategy import BackoffAndJitterStrategy
 from fbclient.utils.repeatable_task import RepeatableTask
 
 WS_NORMAL_CLOSE = 1000
@@ -34,10 +44,12 @@ _WEBSOCKET_TIMEOUT_LOCK = Lock()
 
 
 class _SelfClosed:
-    def __init__(self,
-                 is_self_close: bool = False,
-                 is_reconn: bool = False,
-                 state: Optional[State] = None):
+    def __init__(
+        self,
+        is_self_close: bool = False,
+        is_reconn: bool = False,
+        state: Optional[State] = None,
+    ):
         self.is_self_close = is_self_close
         self.is_reconn = is_reconn
         self.state = state
@@ -53,19 +65,29 @@ def _data_to_dict(data: dict) -> Tuple[int, dict]:
     segments = {}
     all_data[FEATURE_FLAGS] = flags
     all_data[SEGMENTS] = segments
-    for flag in data['featureFlags']:
-        flag['timestamp'] = from_str_datetime_to_millis(flag['updatedAt'])
-        flag['variationMap'] = dict((var['id'], var['value']) for var in flag['variations'])
-        flag['_id'] = flag['id']
-        flag['id'] = flag['key']
-        flag['cat'] = FEATURE_FLAGS
-        flags[flag['id']] = {'id': flag['id'], 'timestamp': flag['timestamp'], 'isArchived': True} if flag['isArchived'] else flag
-        version = max(version, flag['timestamp'])
-    for segment in data['segments']:
-        segment['timestamp'] = from_str_datetime_to_millis(segment['updatedAt'])
-        segment['cat'] = SEGMENTS
-        segments[segment['id']] = {'id': segment['id'], 'timestamp': segment['timestamp'], 'isArchived': True} if segment['isArchived'] else segment
-        version = max(version, segment['timestamp'])
+    for flag in data["featureFlags"]:
+        flag["timestamp"] = from_str_datetime_to_millis(flag["updatedAt"])
+        flag["variationMap"] = dict(
+            (var["id"], var["value"]) for var in flag["variations"]
+        )
+        flag["_id"] = flag["id"]
+        flag["id"] = flag["key"]
+        flag["cat"] = FEATURE_FLAGS
+        flags[flag["id"]] = (
+            {"id": flag["id"], "timestamp": flag["timestamp"], "isArchived": True}
+            if flag["isArchived"]
+            else flag
+        )
+        version = max(version, flag["timestamp"])
+    for segment in data["segments"]:
+        segment["timestamp"] = from_str_datetime_to_millis(segment["updatedAt"])
+        segment["cat"] = SEGMENTS
+        segments[segment["id"]] = (
+            {"id": segment["id"], "timestamp": segment["timestamp"], "isArchived": True}
+            if segment["isArchived"]
+            else segment
+        )
+        version = max(version, segment["timestamp"])
     return version, all_data
 
 
@@ -84,8 +106,14 @@ def _handle_ws_error(error: BaseException) -> Tuple[bool, bool, State]:
 class Streaming(Thread, UpdateProcessor):
     __ping_interval = 10.0
 
-    def __init__(self, config: Config, broadcaster: NoticeBroadcater, dataUpdateStatusProvider: DataUpdateStatusProviderImpl, ready: Event):
-        super().__init__(name='featbit-streaming', daemon=True)
+    def __init__(
+        self,
+        config: Config,
+        broadcaster: NoticeBroadcater,
+        dataUpdateStatusProvider: DataUpdateStatusProviderImpl,
+        ready: Event,
+    ):
+        super().__init__(name="featbit-streaming", daemon=True)
         self.__config = config
         self.__broadcaster = broadcaster
         self.__storage = dataUpdateStatusProvider
@@ -102,25 +130,29 @@ class Streaming(Thread, UpdateProcessor):
         self.__previous_websocket_timeout = None
         self.__has_network = not config.is_offline
         if self.__has_network:
-            self.__ping_task = RepeatableTask('featbit-streaming-ping', self.__ping_interval, self._on_ping)
+            self.__ping_task = RepeatableTask(
+                "featbit-streaming-ping", self.__ping_interval, self._on_ping
+            )
             self.__ping_task.start()
 
     def _init_wsapp(self):
 
         # authenfication and headers
         token = build_token(self.__config.env_secret)
-        params = '?token=%s&type=server' % token
+        params = "?token=%s&type=server" % token
         url = self.__config.streaming_uri + params
         headers = build_headers(self.__config.env_secret)
 
         # init web socket app
-        self.__wsapp = websocket.WebSocketApp(url,
-                                              header=headers,
-                                              on_open=self._on_open,
-                                              on_message=self._on_message,
-                                              on_close=self._on_close,
-                                              on_error=self._on_error)
-        log.debug('Streaming WebSocket is connecting...')
+        self.__wsapp = websocket.WebSocketApp(
+            url,
+            header=headers,
+            on_open=self._on_open,
+            on_message=self._on_message,
+            on_close=self._on_close,
+            on_error=self._on_error,
+        )
+        log.debug("Streaming WebSocket is connecting...")
 
     def __prepare_connection_timeout(self):
         # websocket-client exposes connection timeout as process-global state.
@@ -128,9 +160,11 @@ class Streaming(Thread, UpdateProcessor):
         # environment's stalled connection attempt; in that case the second
         # client proceeds with the timeout value already in effect.
         if not _WEBSOCKET_TIMEOUT_LOCK.acquire(blocking=False):
-            log.warning('FB Python SDK: another WebSocket connection is '
-                        'configuring the process timeout; using the current '
-                        'timeout value')
+            log.warning(
+                "FB Python SDK: another WebSocket connection is "
+                "configuring the process timeout; using the current "
+                "timeout value"
+            )
             return False
         with self.__timeout_state_lock:
             self.__timeout_lock_held = True
@@ -155,16 +189,18 @@ class Streaming(Thread, UpdateProcessor):
             _WEBSOCKET_TIMEOUT_LOCK.release()
 
     def run(self):
-        while (not self.__force_close and self.__running and self.__has_network):
+        while not self.__force_close and self.__running and self.__has_network:
             try:
                 self.__prepare_connection_timeout()
                 self._init_wsapp()
-                self.__wsapp.run_forever(sslopt=self.__config.websocket.sslopt,  # type: ignore
-                                         http_proxy_host=self.__config.websocket.proxy_host,
-                                         http_proxy_port=self.__config.websocket.proxy_port,
-                                         http_proxy_auth=self.__config.websocket.proxy_auth,
-                                         proxy_type=self.__config.websocket.proxy_type,
-                                         skip_utf8_validation=self.__config.websocket.skip_utf8_validation)
+                self.__wsapp.run_forever(
+                    sslopt=self.__config.websocket.sslopt,  # type: ignore
+                    http_proxy_host=self.__config.websocket.proxy_host,
+                    http_proxy_port=self.__config.websocket.proxy_port,
+                    http_proxy_auth=self.__config.websocket.proxy_auth,
+                    proxy_type=self.__config.websocket.proxy_type,
+                    skip_utf8_validation=self.__config.websocket.skip_utf8_validation,
+                )
                 self.__restore_connection_timeout()
                 if self.__running:
                     # calculate the delay for reconn
@@ -173,11 +209,15 @@ class Streaming(Thread, UpdateProcessor):
                     # exponential-backoff delay immediately.
                     self.__stop_event.wait(delay)
             except Exception as e:
-                log.exception('FB Python SDK: Streaming unexpected error: %s', str(e))
+                log.exception("FB Python SDK: Streaming unexpected error: %s", str(e))
                 try:
-                    self.__storage.update_state(State.interrupted_state(UNKNOWN_ERROR, str(e)))
+                    self.__storage.update_state(
+                        State.interrupted_state(UNKNOWN_ERROR, str(e))
+                    )
                 except Exception:
-                    log.exception('FB Python SDK: could not publish streaming error state')
+                    log.exception(
+                        "FB Python SDK: could not publish streaming error state"
+                    )
                 if self.__running and not self.__force_close:
                     # Constructor failures occur outside websocket-client's
                     # callback path, so they need the same backoff as normal
@@ -189,7 +229,7 @@ class Streaming(Thread, UpdateProcessor):
                 self.__wsapp = None
                 self.__self_closed = _SelfClosed()
                 self.__closed_by_error = False
-        log.debug('Streaming WebSocket process is over')
+        log.debug("Streaming WebSocket process is over")
         if not self.__ready.is_set():
             # if an error like data format invalid occurs in the first attempt, set ready to make client not to wait
             self.__ready.set()
@@ -197,8 +237,8 @@ class Streaming(Thread, UpdateProcessor):
     # handle websocket auto close issue
     def _on_ping(self):
         if self.__wsapp and self.__wsapp.sock and self.__wsapp.sock.connected:
-            log.trace('ping')  # type: ignore
-            self.__wsapp.send(json.dumps({'messageType': 'ping', 'data': None}))
+            log.trace("ping")  # type: ignore
+            self.__wsapp.send(json.dumps({"messageType": "ping", "data": None}))
 
     def _on_close(self, wsapp, close_code, close_msg):
         self.__restore_connection_timeout()
@@ -206,20 +246,20 @@ class Streaming(Thread, UpdateProcessor):
             # close by client
             self.__running = self.__self_closed.is_reconn
             state = self.__self_closed.state
-            log.debug('Streaming WebSocket close reason: self close')
+            log.debug("Streaming WebSocket close reason: self close")
         elif self.__closed_by_error:
             return
         elif close_code == WS_INVALID_REQUEST_CLOSE:
             # close by server with code 4003
             self.__running = False
             state = State.error_off_state(REQUEST_INVALID_ERROR, REQUEST_INVALID_ERROR)
-            log.debug('Streaming WebSocket close reason: %s' % REQUEST_INVALID_ERROR)
+            log.debug("Streaming WebSocket close reason: %s" % REQUEST_INVALID_ERROR)
         else:
             # close by server with an unknown close code, restart immediately
             self.__running = True
             msg = close_msg if close_msg else UNKNOWN_CLOSE_CODE
             state = State.interrupted_state(UNKNOWN_CLOSE_CODE, msg)
-            log.debug('Streaming WebSocket close reason: %s' % close_code)
+            log.debug("Streaming WebSocket close reason: %s" % close_code)
 
         if state:
             self.__storage.update_state(state)
@@ -227,9 +267,11 @@ class Streaming(Thread, UpdateProcessor):
     def _on_error(self, wsapp: websocket.WebSocketApp, error):
         self.__restore_connection_timeout()
         is_reconn, is_close_ws, state = _handle_ws_error(error)
-        log.warning('FB Python SDK: Streaming WebSocket Failure: %s' % str(error))
+        log.warning("FB Python SDK: Streaming WebSocket Failure: %s" % str(error))
         if is_close_ws:
-            self.__self_closed = _SelfClosed(is_self_close=True, is_reconn=is_reconn, state=state)
+            self.__self_closed = _SelfClosed(
+                is_self_close=True, is_reconn=is_reconn, state=state
+            )
             wsapp.close(status=WS_GOING_AWAY_CLOSE)
         else:
             self.__running = is_reconn
@@ -239,9 +281,11 @@ class Streaming(Thread, UpdateProcessor):
     def _on_open(self, wsapp: websocket.WebSocketApp):
         self.__restore_connection_timeout()
         self.__strategy.set_good_run()
-        log.debug('Asking Data updating on WebSocket')
-        version = self.__storage.latest_version if self.__storage.latest_version > 0 else 0
-        data_sync_msg = {'messageType': 'data-sync', 'data': {'timestamp': version}}
+        log.debug("Asking Data updating on WebSocket")
+        version = (
+            self.__storage.latest_version if self.__storage.latest_version > 0 else 0
+        )
+        data_sync_msg = {"messageType": "data-sync", "data": {"timestamp": version}}
         json_str = json.dumps(data_sync_msg)
         wsapp.send(json_str)
 
@@ -250,41 +294,48 @@ class Streaming(Thread, UpdateProcessor):
         def get_feature_flag_keys_from_segment(flags, segment_id):
             flag_keys = []
             for flag in flags.values():
-                for rule in flag['rules']:  # type: ignore
-                    for condition in rule['conditions']:  # type: ignore
-                        op = condition['op']  # type: ignore
+                for rule in flag["rules"]:  # type: ignore
+                    for condition in rule["conditions"]:  # type: ignore
+                        op = condition["op"]  # type: ignore
                         if not op:
                             try:
-                                segment_ids = json.loads(condition['value'])  # type: ignore
+                                segment_ids = json.loads(condition["value"])  # type: ignore
                                 if segment_id in segment_ids:  # type: ignore
-                                    flag_keys.append(flag['id'])  # type: ignore
+                                    flag_keys.append(flag["id"])  # type: ignore
                             except:
                                 pass
             return set(flag_keys)
 
         def broacasting():
             flags = self.__storage.get_all(FEATURE_FLAGS)
-            for items in all_data.values() :
-                for item in sorted(items.values(), key=lambda x: x['timestamp']):
-                    if item['cat'] == FEATURE_FLAGS:
+            for items in all_data.values():
+                for item in sorted(items.values(), key=lambda x: x["timestamp"]):
+                    if item["cat"] == FEATURE_FLAGS:
                         # listen flag changes
-                        if item['id'] not in broacasting_ingnored_flag_keys:
-                            broacasting_ingnored_flag_keys.append(item['id'])
-                            self.__broadcaster.broadcast(FlagChangedNotice(item['id']))
-                    elif item['cat'] == SEGMENTS:
+                        if item["id"] not in broacasting_ingnored_flag_keys:
+                            broacasting_ingnored_flag_keys.append(item["id"])
+                            self.__broadcaster.broadcast(FlagChangedNotice(item["id"]))
+                    elif item["cat"] == SEGMENTS:
                         # listen segment changes
-                        flag_keys = get_feature_flag_keys_from_segment(flags, item['id'])
+                        flag_keys = get_feature_flag_keys_from_segment(
+                            flags, item["id"]
+                        )
                         for flag_key in flag_keys:
                             if flag_key not in broacasting_ingnored_flag_keys:
                                 broacasting_ingnored_flag_keys.append(flag_key)
-                                self.__broadcaster.broadcast(FlagChangedNotice(flag_key))
+                                self.__broadcaster.broadcast(
+                                    FlagChangedNotice(flag_key)
+                                )
 
-        log.debug('Streaming WebSocket is processing data')
+        log.debug("Streaming WebSocket is processing data")
         version, all_data = _data_to_dict(data)
         op_ok = False
-        if 'patch' == data['eventType']:
-            op_ok = all(self.__storage.upsert(cat, item['id'], item, item['timestamp'])
-                        for cat, items in all_data.items() for item in sorted(items.values(), key=lambda x: x['timestamp']))
+        if "patch" == data["eventType"]:
+            op_ok = all(
+                self.__storage.upsert(cat, item["id"], item, item["timestamp"])
+                for cat, items in all_data.items()
+                for item in sorted(items.values(), key=lambda x: x["timestamp"])
+            )
         else:
             op_ok = self.__storage.init(all_data, version)
         if op_ok:
@@ -299,51 +350,63 @@ class Streaming(Thread, UpdateProcessor):
         return op_ok
 
     def _on_message(self, wsapp: websocket.WebSocketApp, msg):
-        log.trace('Streaming WebSocket data: %s' % msg)  # type: ignore
+        log.trace("Streaming WebSocket data: %s" % msg)  # type: ignore
         try:
             all_data = json.loads(msg)
         except Exception:
-            log.exception('FB Python SDK: could not parse data-sync message; skipping message: %r', msg)
+            log.exception(
+                "FB Python SDK: could not parse data-sync message; skipping message: %r",
+                msg,
+            )
             return
-        if isinstance(all_data, dict) and all_data.get('messageType') == 'data-sync':
+        if isinstance(all_data, dict) and all_data.get("messageType") == "data-sync":
             try:
                 self._handle_data_sync_message(wsapp, all_data)
             except Exception:
-                log.exception('FB Python SDK: could not process data-sync message; skipping message: %r', all_data)
+                log.exception(
+                    "FB Python SDK: could not process data-sync message; skipping message: %r",
+                    all_data,
+                )
 
     def _handle_data_sync_message(self, wsapp: websocket.WebSocketApp, all_data):
         if not valide_all_data(all_data):
-            log.error('FB Python SDK: invalid data-sync message; skipping message: %r', all_data)
+            log.error(
+                "FB Python SDK: invalid data-sync message; skipping message: %r",
+                all_data,
+            )
             return
-        if not self._on_process_data(all_data['data']):
-            log.error('FB Python SDK: could not apply data-sync message; skipping message: %r', all_data)
+        if not self._on_process_data(all_data["data"]):
+            log.error(
+                "FB Python SDK: could not apply data-sync message; skipping message: %r",
+                all_data,
+            )
 
     def stop(self):
-        log.info('FB Python SDK: Streaming is stopping...')
+        log.info("FB Python SDK: Streaming is stopping...")
         self.__force_close = True
         self.__running = False
         self.__stop_event.set()
         try:
             self.__storage.update_state(State.normal_off_state())
         except Exception:
-            log.exception('FB Python SDK: could not publish streaming shutdown state')
+            log.exception("FB Python SDK: could not publish streaming shutdown state")
         try:
             if self.__wsapp:
-                self.__self_closed = _SelfClosed(is_self_close=True,
-                                                 is_reconn=False,
-                                                 state=State.normal_off_state())
+                self.__self_closed = _SelfClosed(
+                    is_self_close=True, is_reconn=False, state=State.normal_off_state()
+                )
                 self.__wsapp.close(status=WS_NORMAL_CLOSE)
         except Exception:
-            log.exception('FB Python SDK: could not close the WebSocket connection')
+            log.exception("FB Python SDK: could not close the WebSocket connection")
         if self.__has_network:
             try:
                 self.__ping_task.stop()
             except Exception:
-                log.exception('FB Python SDK: could not stop the streaming ping task')
+                log.exception("FB Python SDK: could not stop the streaming ping task")
         if current_thread() is not self and self.is_alive():
             self.join(self.__config.websocket.timeout + 1.0)
             if self.is_alive():
-                log.warning('FB Python SDK: streaming thread did not stop in time')
+                log.warning("FB Python SDK: streaming thread did not stop in time")
 
     @property
     def initialized(self) -> bool:

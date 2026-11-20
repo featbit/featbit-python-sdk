@@ -130,6 +130,10 @@ dmypy.json
 
 ### IDEs
 
+#### Zed
+
+/.zed/debug.json
+
 #### VSCode
 
 .vscode/*

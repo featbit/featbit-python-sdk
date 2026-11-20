@@ -1,9 +1,8 @@
-
 from queue import Queue
 from threading import Lock, Thread, current_thread
 from typing import Callable
-from fbclient.interfaces import Notice
 
+from fbclient.interfaces import Notice
 from fbclient.utils import log
 
 
@@ -14,15 +13,19 @@ class NoticeBroadcater:
         self.__listeners = {}
         self.__lock = Lock()
         self.__stop_notice = object()
-        self.__thread = Thread(name='featbit-notice-broadcaster',
-                               daemon=True,
-                               target=self.__run)
-        log.debug('notice broadcaster starting...')
+        self.__thread = Thread(
+            name="featbit-notice-broadcaster", daemon=True, target=self.__run
+        )
+        log.debug("notice broadcaster starting...")
         self.__thread.start()
 
     def add_listener(self, notice_type: str, listener: Callable[[Notice], None]):
-        if isinstance(notice_type, str) and notice_type.strip() and listener is not None:
-            log.debug('add a listener for notice type %s' % notice_type)
+        if (
+            isinstance(notice_type, str)
+            and notice_type.strip()
+            and listener is not None
+        ):
+            log.debug("add a listener for notice type %s" % notice_type)
             with self.__lock:
                 if self.__closed:
                     return
@@ -36,7 +39,7 @@ class NoticeBroadcater:
     def remove_listener(self, notice_type: str, listener: Callable[[Notice], None]):
         if listener is None:
             return
-        log.debug('remove a listener for notice type %s' % notice_type)
+        log.debug("remove a listener for notice type %s" % notice_type)
         with self.__lock:
             notifiers = self.__listeners.get(notice_type)
             if not notifiers:
@@ -57,7 +60,7 @@ class NoticeBroadcater:
             self.__notice_queue.put(notice)
 
     def stop(self):
-        log.debug('notice broadcaster stopping...')
+        log.debug("notice broadcaster stopping...")
         with self.__lock:
             if self.__closed:
                 return
@@ -66,7 +69,7 @@ class NoticeBroadcater:
         if current_thread() is not self.__thread:
             self.__thread.join(5.0)
             if self.__thread.is_alive():
-                log.warning('FB Python SDK: notice broadcaster did not stop in time')
+                log.warning("FB Python SDK: notice broadcaster did not stop in time")
 
     def __run(self):
         while True:
@@ -82,4 +85,7 @@ class NoticeBroadcater:
             try:
                 listener(notice)
             except Exception as e:
-                log.exception('FB Python SDK: unexpected error in handle notice %s: %s' % (notice.notice_type, str(e)))
+                log.exception(
+                    "FB Python SDK: unexpected error in handle notice %s: %s"
+                    % (notice.notice_type, str(e))
+                )

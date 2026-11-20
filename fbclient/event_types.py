@@ -3,7 +3,7 @@ from threading import Event
 from time import time
 from typing import Optional
 
-from fbclient.common_types import _EvalResult, FBEvent, FBUser
+from fbclient.common_types import FBEvent, FBUser, _EvalResult
 
 
 class MessageType(Enum):
@@ -16,7 +16,9 @@ class MessageType(Enum):
 
 
 class EventMessage:
-    def __init__(self, type: MessageType, event: Optional[FBEvent], await_termination: bool):
+    def __init__(
+        self, type: MessageType, event: Optional[FBEvent], await_termination: bool
+    ):
         self.__type = type
         self.__event = event
         self.__wait_lock = Event() if await_termination else None
@@ -56,9 +58,9 @@ class Metric:
     def __init__(self, event_name: str, value: float):
         self.__event_name = event_name
         self.__value = value
-        self.__route = 'index/metric'
-        self.__type = 'CustomEvent'
-        self.__app_type = 'pythonserverside'
+        self.__route = "index/metric"
+        self.__type = "CustomEvent"
+        self.__app_type = "pythonserverside"
         self.__timestamp = int(round(time() * 1000))
 
     @property
@@ -98,7 +100,7 @@ class UserEvent(FBEvent):
         return self._user is not None
 
     def to_json_dict(self) -> dict:
-        return {'user': self._user.to_json_dict()}
+        return {"user": self._user.to_json_dict()}
 
 
 class FlagEvent(FBEvent):
@@ -117,18 +119,20 @@ class FlagEvent(FBEvent):
         return self._user and len(self.__variations) > 0
 
     def to_json_dict(self) -> dict:
-        json_dict = {'user': self._user.to_json_dict()}
+        json_dict = {"user": self._user.to_json_dict()}
         arr = []
         for variation in self.__variations:
-            flag_json_dict = {'featureFlagKey': variation.variation.key_name,
-                              'timestamp': variation.timestamp,
-                              'variation': {
-                                  'id': variation.variation.id,
-                                  'value': variation.variation.value,
-                                  'reason': variation.variation.reason
-                              }}
+            flag_json_dict = {
+                "featureFlagKey": variation.variation.key_name,
+                "timestamp": variation.timestamp,
+                "variation": {
+                    "id": variation.variation.id,
+                    "value": variation.variation.value,
+                    "reason": variation.variation.reason,
+                },
+            }
             arr.append(flag_json_dict)
-        json_dict['variations'] = arr  # type: ignore
+        json_dict["variations"] = arr  # type: ignore
         return json_dict
 
 
@@ -148,15 +152,17 @@ class MetricEvent(FBEvent):
         return self._user and len(self.__metrics) > 0
 
     def to_json_dict(self) -> dict:
-        json_dict = {'user': self._user.to_json_dict()}
+        json_dict = {"user": self._user.to_json_dict()}
         arr = []
         for metric in self.__metrics:
-            metric_json_dict = {'eventName': metric.event_name,
-                                'numericValue': metric.value,
-                                'route': metric.route,
-                                'type': metric.type,
-                                'appType': metric.app_type,
-                                'timestamp': metric.timestamp}
+            metric_json_dict = {
+                "eventName": metric.event_name,
+                "numericValue": metric.value,
+                "route": metric.route,
+                "type": metric.type,
+                "appType": metric.app_type,
+                "timestamp": metric.timestamp,
+            }
             arr.append(metric_json_dict)
-        json_dict['metrics'] = arr  # type: ignore
+        json_dict["metrics"] = arr  # type: ignore
         return json_dict

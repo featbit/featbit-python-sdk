@@ -19,7 +19,8 @@ from fbclient.config import Config  # noqa: E402
 
 def sdk_thread_ids():
     return {
-        thread.ident for thread in threading.enumerate()
+        thread.ident
+        for thread in threading.enumerate()
         if thread.name.startswith("featbit-")
     }
 
@@ -36,10 +37,12 @@ def main():
         parser.error("--workers must be at least 1")
 
     baseline_threads = sdk_thread_ids()
-    config = Config("resource-audit",
-                    event_url="http://offline",
-                    streaming_url="ws://offline",
-                    offline=True)
+    config = Config(
+        "resource-audit",
+        event_url="http://offline",
+        streaming_url="ws://offline",
+        offline=True,
+    )
     client = FBClient(config)
     bootstrap = (ROOT / "tests" / "fbclient_test_data.json").read_text()
     if not client.initialize_from_external_json(bootstrap):
@@ -55,8 +58,7 @@ def main():
     errors = []
     per_worker, remainder = divmod(args.evaluations, args.workers)
     workloads = [
-        per_worker + (1 if worker < remainder else 0)
-        for worker in range(args.workers)
+        per_worker + (1 if worker < remainder else 0) for worker in range(args.workers)
     ]
 
     def evaluate(work):
@@ -88,9 +90,9 @@ def main():
     tracemalloc.stop()
 
     leaked_threads = sorted(
-        thread.name for thread in threading.enumerate()
-        if thread.name.startswith("featbit-")
-        and thread.ident not in baseline_threads
+        thread.name
+        for thread in threading.enumerate()
+        if thread.name.startswith("featbit-") and thread.ident not in baseline_threads
     )
     retained_bytes = max(0, final_bytes - baseline_bytes)
     result = {
@@ -105,11 +107,15 @@ def main():
         "retained_traced_bytes": retained_bytes,
         "allowed_retained_bytes": args.max_retained_bytes,
     }
-    result["status"] = "ok" if (
-        not errors
-        and not leaked_threads
-        and retained_bytes <= args.max_retained_bytes
-    ) else "failed"
+    result["status"] = (
+        "ok"
+        if (
+            not errors
+            and not leaked_threads
+            and retained_bytes <= args.max_retained_bytes
+        )
+        else "failed"
+    )
     print(json.dumps(result, indent=2, sort_keys=True))
     if result["status"] != "ok":
         raise SystemExit(1)

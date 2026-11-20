@@ -1,15 +1,16 @@
-
-
 from queue import Empty, Queue
 
 import pytest
 
-from fbclient.flag_change_notification import (FlagChangedListener,
-                                               FlagChangedNotice, FlagTracker)
+from fbclient.flag_change_notification import (
+    FlagChangedListener,
+    FlagChangedNotice,
+    FlagTracker,
+)
 from fbclient.interfaces import Notice
 from fbclient.notice_broadcaster import NoticeBroadcater
 
-TEST_NOTICE_TYPE = 'test_notice_type'
+TEST_NOTICE_TYPE = "test_notice_type"
 
 
 class TestNotice(Notice):
@@ -50,7 +51,7 @@ def test_register_a_listener(queue):
     notice_broadcaster.add_listener(TEST_NOTICE_TYPE, queue.put)
     notice_broadcaster.add_listener(TEST_NOTICE_TYPE, queue.put)
 
-    notice = TestNotice(TEST_NOTICE_TYPE, 'test content')
+    notice = TestNotice(TEST_NOTICE_TYPE, "test content")
     notice_broadcaster.broadcast(notice)
 
     assert queue.get() == notice
@@ -67,7 +68,7 @@ def test_unregister_a_listener(queue):
     notice_broadcaster.add_listener(TEST_NOTICE_TYPE, queue.put)
     notice_broadcaster.remove_listener(TEST_NOTICE_TYPE, queue.put)
 
-    notice = TestNotice(TEST_NOTICE_TYPE, 'test content')
+    notice = TestNotice(TEST_NOTICE_TYPE, "test content")
     notice_broadcaster.broadcast(notice)
 
     assert queue.get() == notice
@@ -87,7 +88,7 @@ def test_register_a_flag_changed_listener(queue):
     flag_tracker.add_flag_changed_listener(flag_changed_listener)
     flag_tracker.add_flag_changed_listener(flag_changed_listener)
 
-    notice = FlagChangedNotice('test_flag_key')
+    notice = FlagChangedNotice("test_flag_key")
     notice_broadcaster.broadcast(notice)
 
     assert queue.get() == notice
@@ -106,7 +107,7 @@ def test_unregister_a_flag_changed_listener(queue):
     flag_tracker.add_flag_changed_listener(flag_changed_listener)
     flag_tracker.remove_flag_change_notifier(flag_changed_listener)
 
-    notice = FlagChangedNotice('test_flag_key')
+    notice = FlagChangedNotice("test_flag_key")
     notice_broadcaster.broadcast(notice)
 
     assert queue.get() == notice

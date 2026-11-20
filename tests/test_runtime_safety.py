@@ -1,12 +1,13 @@
 import base64
 import queue
 import threading
-from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from time import sleep
 
 import pytest
 
+import fbclient.streaming as streaming_module
 from fbclient.client import FBClient
 from fbclient.config import Config, HTTPConfig
 from fbclient.data_storage import InMemoryDataStorage
@@ -15,11 +16,9 @@ from fbclient.notice_broadcaster import NoticeBroadcater
 from fbclient.status import DataUpdateStatusProviderImpl
 from fbclient.status_types import State, StateType
 from fbclient.streaming import Streaming
-import fbclient.streaming as streaming_module
 from fbclient.update_processor import NullUpdateProcessor
 from fbclient.utils.http_client import build_http_factory
 from fbclient.utils.repeatable_task import RepeatableTask
-
 
 FAKE_ENV_SECRET = base64.b64encode(b"runtime-safety").decode()
 FAKE_URL = "http://fake"
@@ -27,10 +26,11 @@ USER = {"key": "runtime-user", "name": "Runtime User"}
 
 
 def make_offline_client():
-    client = FBClient(Config(FAKE_ENV_SECRET,
-                             event_url=FAKE_URL,
-                             streaming_url=FAKE_URL,
-                             offline=True))
+    client = FBClient(
+        Config(
+            FAKE_ENV_SECRET, event_url=FAKE_URL, streaming_url=FAKE_URL, offline=True
+        )
+    )
     bootstrap = Path("tests/fbclient_test_data.json").read_text()
     assert client.initialize_from_external_json(bootstrap)
     return client
@@ -38,7 +38,8 @@ def make_offline_client():
 
 def featbit_thread_ids():
     return {
-        thread.ident for thread in threading.enumerate()
+        thread.ident
+        for thread in threading.enumerate()
         if thread.name.startswith("featbit-")
     }
 
@@ -121,8 +122,7 @@ def test_notice_broadcast_cannot_be_overtaken_by_shutdown(monkeypatch):
             return self.inner.get(*args, **kwargs)
 
     controlled_queue = PausingQueue()
-    monkeypatch.setattr("fbclient.notice_broadcaster.Queue",
-                        lambda: controlled_queue)
+    monkeypatch.setattr("fbclient.notice_broadcaster.Queue", lambda: controlled_queue)
     broadcaster = NoticeBroadcater()
     received = threading.Event()
 
@@ -133,9 +133,7 @@ def test_notice_broadcast_cannot_be_overtaken_by_shutdown(monkeypatch):
     controlled_queue.target = notice
     broadcaster.add_listener("test", lambda _notice: received.set())
 
-    broadcaster_thread = threading.Thread(
-        target=lambda: broadcaster.broadcast(notice)
-    )
+    broadcaster_thread = threading.Thread(target=lambda: broadcaster.broadcast(notice))
     broadcaster_thread.start()
     assert controlled_queue.target_started.wait(1.0)
 
@@ -169,11 +167,13 @@ def test_client_public_event_and_shutdown_calls_do_not_raise():
     def build_event_processor(_config, _sender):
         return FailingEventProcessor()
 
-    config = Config(FAKE_ENV_SECRET,
-                    event_url=FAKE_URL,
-                    streaming_url=FAKE_URL,
-                    update_processor_imp=NullUpdateProcessor,
-                    event_processor_imp=build_event_processor)
+    config = Config(
+        FAKE_ENV_SECRET,
+        event_url=FAKE_URL,
+        streaming_url=FAKE_URL,
+        update_processor_imp=NullUpdateProcessor,
+        event_processor_imp=build_event_processor,
+    )
     client = FBClient(config)
     client.identify(USER)
     client.track_metric(USER, "metric")
@@ -203,11 +203,13 @@ def test_status_listener_can_reenter_client_stop_without_deadlock():
         def initialized(self):
             return True
 
-    config = Config(FAKE_ENV_SECRET,
-                    event_url=FAKE_URL,
-                    streaming_url=FAKE_URL,
-                    update_processor_imp=NotifyingUpdateProcessor,
-                    event_processor_imp=lambda config, sender: NullEventProcessor(config, sender))
+    config = Config(
+        FAKE_ENV_SECRET,
+        event_url=FAKE_URL,
+        streaming_url=FAKE_URL,
+        update_processor_imp=NotifyingUpdateProcessor,
+        event_processor_imp=lambda config, sender: NullEventProcessor(config, sender),
+    )
     client = FBClient(config)
     listener_states = []
 
@@ -258,19 +260,13 @@ def test_concurrent_client_stop_waits_for_cleanup():
         event_url=FAKE_URL,
         streaming_url=FAKE_URL,
         update_processor_imp=BlockingUpdateProcessor,
-        event_processor_imp=lambda config, sender: NullEventProcessor(
-            config, sender
-        ),
+        event_processor_imp=lambda config, sender: NullEventProcessor(config, sender),
     )
     client = FBClient(config)
     first_done = threading.Event()
     second_done = threading.Event()
-    first = threading.Thread(
-        target=lambda: (client.stop(), first_done.set())
-    )
-    second = threading.Thread(
-        target=lambda: (client.stop(), second_done.set())
-    )
+    first = threading.Thread(target=lambda: (client.stop(), first_done.set()))
+    second = threading.Thread(target=lambda: (client.stop(), second_done.set()))
     first.start()
     assert stop_entered.wait(1.0)
     second.start()
@@ -297,11 +293,8 @@ def test_streaming_stop_interrupts_network_wait(monkeypatch):
         def close(self, status=None):
             self.closed.set()
 
-    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp",
-                        FakeWebSocketApp)
-    config = Config(FAKE_ENV_SECRET,
-                    event_url=FAKE_URL,
-                    streaming_url=FAKE_URL)
+    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp", FakeWebSocketApp)
+    config = Config(FAKE_ENV_SECRET, event_url=FAKE_URL, streaming_url=FAKE_URL)
     broadcaster = NoticeBroadcater()
     status = DataUpdateStatusProviderImpl(InMemoryDataStorage())
     streaming = Streaming(config, broadcaster, status, threading.Event())
@@ -320,9 +313,13 @@ def test_default_config_objects_are_not_shared():
 
 
 def test_config_copy_uses_independent_storage_and_exact_queue_capacity():
-    original = Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL,
-                      events_max_in_queue=1,
-                      defaults={"flag": {"nested": True}})
+    original = Config(
+        FAKE_ENV_SECRET,
+        FAKE_URL,
+        FAKE_URL,
+        events_max_in_queue=1,
+        defaults={"flag": {"nested": True}},
+    )
     copied = original.copy_config_in_a_new_env(
         base64.b64encode(b"other-environment").decode()
     )
@@ -334,8 +331,9 @@ def test_config_copy_uses_independent_storage_and_exact_queue_capacity():
 
 
 def test_http_client_uses_configured_client_certificate():
-    config = Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL,
-                    http=HTTPConfig(cert_file="client.pem"))
+    config = Config(
+        FAKE_ENV_SECRET, FAKE_URL, FAKE_URL, http=HTTPConfig(cert_file="client.pem")
+    )
     manager = build_http_factory(config).create_http_client()
     try:
         assert manager.connection_pool_kw["cert_file"] == "client.pem"
@@ -357,12 +355,14 @@ def test_terminal_streaming_error_does_not_report_initialized(monkeypatch):
         def close(self, status=None):
             pass
 
-    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp",
-                        InvalidRequestWebSocketApp)
+    monkeypatch.setattr(
+        "fbclient.streaming.websocket.WebSocketApp", InvalidRequestWebSocketApp
+    )
     status = DataUpdateStatusProviderImpl(InMemoryDataStorage())
     broadcaster = NoticeBroadcater()
-    streaming = Streaming(Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL),
-                          broadcaster, status, ready)
+    streaming = Streaming(
+        Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL), broadcaster, status, ready
+    )
     streaming.start()
     streaming.join(1.0)
     try:
@@ -381,14 +381,17 @@ def test_streaming_constructor_failures_use_backoff(monkeypatch):
         attempts[0] += 1
         raise RuntimeError("constructor failed")
 
-    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp",
-                        fail_constructor)
-    config = Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL,
-                    streaming_first_retry_delay=0.05)
+    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp", fail_constructor)
+    config = Config(
+        FAKE_ENV_SECRET, FAKE_URL, FAKE_URL, streaming_first_retry_delay=0.05
+    )
     broadcaster = NoticeBroadcater()
-    streaming = Streaming(config, broadcaster,
-                          DataUpdateStatusProviderImpl(InMemoryDataStorage()),
-                          threading.Event())
+    streaming = Streaming(
+        config,
+        broadcaster,
+        DataUpdateStatusProviderImpl(InMemoryDataStorage()),
+        threading.Event(),
+    )
     streaming.start()
     sleep(0.12)
     streaming.stop()
@@ -419,13 +422,14 @@ def test_streaming_restores_websocket_global_timeout_after_open(monkeypatch):
         def close(self, status=None):
             self.closed.set()
 
-    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp",
-                        OpenWebSocketApp)
+    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp", OpenWebSocketApp)
     broadcaster = NoticeBroadcater()
-    streaming = Streaming(Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL),
-                          broadcaster,
-                          DataUpdateStatusProviderImpl(InMemoryDataStorage()),
-                          threading.Event())
+    streaming = Streaming(
+        Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL),
+        broadcaster,
+        DataUpdateStatusProviderImpl(InMemoryDataStorage()),
+        threading.Event(),
+    )
     streaming.start()
     assert opened.wait(1.0)
     try:
@@ -455,8 +459,7 @@ def test_streaming_does_not_block_on_another_clients_timeout_lock(monkeypatch):
         def close(self, status=None):
             self.closed.set()
 
-    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp",
-                        OpenWebSocketApp)
+    monkeypatch.setattr("fbclient.streaming.websocket.WebSocketApp", OpenWebSocketApp)
     assert streaming_module._WEBSOCKET_TIMEOUT_LOCK.acquire(timeout=1.0)
     broadcaster = NoticeBroadcater()
     streaming = Streaming(
@@ -484,18 +487,25 @@ class _RecordingWebSocketApp:
 
 def _idle_streaming():
     broadcaster = NoticeBroadcater()
-    streaming = Streaming(Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL), broadcaster,
-                          DataUpdateStatusProviderImpl(InMemoryDataStorage()), threading.Event())
+    streaming = Streaming(
+        Config(FAKE_ENV_SECRET, FAKE_URL, FAKE_URL),
+        broadcaster,
+        DataUpdateStatusProviderImpl(InMemoryDataStorage()),
+        threading.Event(),
+    )
     return streaming, broadcaster
 
 
-@pytest.mark.parametrize('message', [
-    '{"messageType":"pong","data":{}}',
-    '{"messageType":"unknown","data":{}}',
-    '{"data":{}}',
-    '[]',
-    'null',
-])
+@pytest.mark.parametrize(
+    "message",
+    [
+        '{"messageType":"pong","data":{}}',
+        '{"messageType":"unknown","data":{}}',
+        '{"data":{}}',
+        "[]",
+        "null",
+    ],
+)
 def test_streaming_non_data_sync_message_keeps_connection_open(message):
     streaming, broadcaster = _idle_streaming()
     wsapp = _RecordingWebSocketApp()
@@ -508,17 +518,22 @@ def test_streaming_non_data_sync_message_keeps_connection_open(message):
         broadcaster.stop()
 
 
-@pytest.mark.parametrize('message', [
-    'invalid json',
-    '{"messageType":"data-sync","data":{}}',
-    '{"messageType":"data-sync","data":null}',
-])
-def test_streaming_invalid_message_is_logged_and_next_sync_is_processed(message, mocker):
+@pytest.mark.parametrize(
+    "message",
+    [
+        "invalid json",
+        '{"messageType":"data-sync","data":{}}',
+        '{"messageType":"data-sync","data":null}',
+    ],
+)
+def test_streaming_invalid_message_is_logged_and_next_sync_is_processed(
+    message, mocker
+):
     streaming, broadcaster = _idle_streaming()
     wsapp = _RecordingWebSocketApp()
-    process_data = mocker.patch.object(streaming, '_on_process_data', return_value=True)
-    error_log = mocker.patch.object(streaming_module.log, 'error')
-    exception_log = mocker.patch.object(streaming_module.log, 'exception')
+    process_data = mocker.patch.object(streaming, "_on_process_data", return_value=True)
+    error_log = mocker.patch.object(streaming_module.log, "error")
+    exception_log = mocker.patch.object(streaming_module.log, "exception")
     try:
         streaming._on_message(wsapp, message)
         assert wsapp.close_statuses == []
@@ -526,9 +541,14 @@ def test_streaming_invalid_message_is_logged_and_next_sync_is_processed(message,
         process_data.assert_not_called()
         assert error_log.called or exception_log.called
 
-        streaming._on_message(wsapp, '{"messageType":"data-sync","data":'
-                              '{"eventType":"full","featureFlags":[],"segments":[]}}')
-        process_data.assert_called_once_with({'eventType': 'full', 'featureFlags': [], 'segments': []})
+        streaming._on_message(
+            wsapp,
+            '{"messageType":"data-sync","data":'
+            '{"eventType":"full","featureFlags":[],"segments":[]}}',
+        )
+        process_data.assert_called_once_with(
+            {"eventType": "full", "featureFlags": [], "segments": []}
+        )
         assert wsapp.close_statuses == []
     finally:
         streaming.stop()
@@ -539,10 +559,14 @@ def test_streaming_data_processing_failure_keeps_connection_open(mocker):
     streaming, broadcaster = _idle_streaming()
     wsapp = _RecordingWebSocketApp()
     streaming._Streaming__wsapp = wsapp
-    process_data = mocker.patch.object(streaming, '_on_process_data', side_effect=[False, True])
-    error_log = mocker.patch.object(streaming_module.log, 'error')
-    message = ('{"messageType":"data-sync","data":'
-               '{"eventType":"full","featureFlags":[],"segments":[]}}')
+    process_data = mocker.patch.object(
+        streaming, "_on_process_data", side_effect=[False, True]
+    )
+    error_log = mocker.patch.object(streaming_module.log, "error")
+    message = (
+        '{"messageType":"data-sync","data":'
+        '{"eventType":"full","featureFlags":[],"segments":[]}}'
+    )
     try:
         streaming._on_message(wsapp, message)
         assert wsapp.close_statuses == []

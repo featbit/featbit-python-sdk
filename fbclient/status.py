@@ -5,13 +5,16 @@ from typing import Callable, Deque, List, Mapping, Tuple
 
 from fbclient.category import Category
 from fbclient.interfaces import DataStorage, DataUpdateStatusProvider
-from fbclient.status_types import (DATA_STORAGE_INIT_ERROR,
-                                   DATA_STORAGE_UPDATE_ERROR, State, StateType)
+from fbclient.status_types import (
+    DATA_STORAGE_INIT_ERROR,
+    DATA_STORAGE_UPDATE_ERROR,
+    State,
+    StateType,
+)
 from fbclient.utils import log
 
 
 class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
-
     def __init__(self, storage: DataStorage):
         self.__storage = storage
         self.__current_state = State.intializing_state()
@@ -22,7 +25,9 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
         ] = deque()
         self.__is_publishing_notifications = False
 
-    def init(self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0) -> bool:
+    def init(
+        self, all_data: Mapping[Category, Mapping[str, dict]], version: int = 0
+    ) -> bool:
         try:
             result = self.__storage.init(all_data, version)
         except Exception as e:
@@ -42,7 +47,10 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
         return result is not False
 
     def __handle_exception(self, error: Exception, error_type: str, message: str):
-        log.exception('FB Python SDK: Data Storage error: %s, UpdateProcessor will attempt to receive the data' % str(error))
+        log.exception(
+            "FB Python SDK: Data Storage error: %s, UpdateProcessor will attempt to receive the data"
+            % str(error)
+        )
         self.update_state(State.interrupted_state(error_type, message))
 
     def get_all(self, kind: Category) -> Mapping[str, dict]:
@@ -71,12 +79,19 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
             error = new_state.error_track
             # special case: if ``new_state`` is INTERRUPTED, but the previous state was INITIALIZING, the state will remain at INITIALIZING
             # INTERRUPTED is only meaningful after a successful startup
-            if new_state_type == StateType.INTERRUPTED and old_state_type == StateType.INITIALIZING:
+            if (
+                new_state_type == StateType.INTERRUPTED
+                and old_state_type == StateType.INITIALIZING
+            ):
                 new_state_type = StateType.INITIALIZING
 
             # normal case
             if new_state_type != old_state_type or error is not None:
-                state_since = time() if new_state_type != old_state_type else self.__current_state.state_since
+                state_since = (
+                    time()
+                    if new_state_type != old_state_type
+                    else self.__current_state.state_since
+                )
                 self.__current_state = State(new_state_type, state_since, error)
                 # wakes up all threads waiting for the ok state to check the new state
                 self.__lock.notify_all()
@@ -102,7 +117,7 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
                 try:
                     listener(state)
                 except Exception:
-                    log.exception('FB Python SDK: Update status listener failed')
+                    log.exception("FB Python SDK: Update status listener failed")
 
     def add_listener(self, listener: Callable[[State], None]):
         if not callable(listener):
@@ -112,7 +127,7 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
                 if listener not in self.__listeners:
                     self.__listeners.append(listener)
             except Exception:
-                log.exception('FB Python SDK: Could not add update status listener')
+                log.exception("FB Python SDK: Could not add update status listener")
 
     def remove_listener(self, listener: Callable[[State], None]):
         with self.__lock:
@@ -121,7 +136,7 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
             except ValueError:
                 pass
             except Exception:
-                log.exception('FB Python SDK: Could not remove update status listener')
+                log.exception("FB Python SDK: Could not remove update status listener")
 
     def wait_for_OKState(self, timeout: float = 0) -> bool:
         _timeout = 0 if timeout is None or timeout <= 0 else timeout
@@ -133,7 +148,7 @@ class DataUpdateStatusProviderImpl(DataUpdateStatusProvider):
                 elif StateType.OFF == self.__current_state.state_type:
                     return False
                 else:
-                    if (_timeout == 0):
+                    if _timeout == 0:
                         self.__lock.wait()
                     else:
                         now = time()

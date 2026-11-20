@@ -14,8 +14,18 @@ from fbclient.status_types import State, StateType
 def items():
     items = {}
     items["id_1"] = {"id": "id_1", "timestamp": 1, "isArchived": True, "name": "name_1"}
-    items["id_2"] = {"id": "id_2", "timestamp": 2, "isArchived": False, "name": "name_2"}
-    items["id_3"] = {"id": "id_3", "timestamp": 3, "isArchived": False, "name": "name_3"}
+    items["id_2"] = {
+        "id": "id_2",
+        "timestamp": 2,
+        "isArchived": False,
+        "name": "name_2",
+    }
+    items["id_3"] = {
+        "id": "id_3",
+        "timestamp": 3,
+        "isArchived": False,
+        "name": "name_3",
+    }
     return items
 
 
@@ -55,7 +65,9 @@ def test_upsert_data_storage(data_updator, data_storage, items):
 
 
 @patch.object(InMemoryDataStorage, "init")
-def test_init_data_storage_unexptected_error(mock_init_method, data_updator, data_storage, items):
+def test_init_data_storage_unexptected_error(
+    mock_init_method, data_updator, data_storage, items
+):
     mock_init_method.side_effect = RuntimeError("test exception")
     all_data = {DATATEST: items}
     if data_updator.init(all_data, 3):
@@ -67,7 +79,9 @@ def test_init_data_storage_unexptected_error(mock_init_method, data_updator, dat
 
 
 @patch.object(InMemoryDataStorage, "upsert")
-def test_upsert_data_storage_unexpected_error(mock_upsert_method, data_updator, data_storage, items):
+def test_upsert_data_storage_unexpected_error(
+    mock_upsert_method, data_updator, data_storage, items
+):
     mock_upsert_method.side_effect = RuntimeError("test exception")
     all_data = {DATATEST: items}
     if data_updator.init(all_data, 3):
@@ -139,12 +153,11 @@ def test_status_listener_preserves_concurrent_transition_order(data_updator):
 
     data_updator.add_listener(listener)
     first_update = threading.Thread(
-        target=data_updator.update_state,
-        args=(State.ok_state(),)
+        target=data_updator.update_state, args=(State.ok_state(),)
     )
     second_update = threading.Thread(
         target=data_updator.update_state,
-        args=(State.interrupted_state("network", "disconnected"),)
+        args=(State.interrupted_state("network", "disconnected"),),
     )
 
     first_update.start()
