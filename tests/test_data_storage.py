@@ -15,8 +15,18 @@ def data_storage():
 def items():
     items = {}
     items["id_1"] = {"id": "id_1", "timestamp": 1, "isArchived": True, "name": "name_1"}
-    items["id_2"] = {"id": "id_2", "timestamp": 2, "isArchived": False, "name": "name_2"}
-    items["id_3"] = {"id": "id_3", "timestamp": 3, "isArchived": False, "name": "name_3"}
+    items["id_2"] = {
+        "id": "id_2",
+        "timestamp": 2,
+        "isArchived": False,
+        "name": "name_2",
+    }
+    items["id_3"] = {
+        "id": "id_3",
+        "timestamp": 3,
+        "isArchived": False,
+        "name": "name_3",
+    }
     return items
 
 

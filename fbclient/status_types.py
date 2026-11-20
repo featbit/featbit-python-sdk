@@ -2,27 +2,27 @@ from enum import Enum
 from time import time
 from typing import Optional
 
-DATA_STORAGE_INIT_ERROR = 'Data Storage init error'
+DATA_STORAGE_INIT_ERROR = "Data Storage init error"
 
-DATA_STORAGE_UPDATE_ERROR = 'Data Storage update error'
+DATA_STORAGE_UPDATE_ERROR = "Data Storage update error"
 
-REQUEST_INVALID_ERROR = 'Request invalid'
+REQUEST_INVALID_ERROR = "Request invalid"
 
-DATA_INVALID_ERROR = 'Received Data invalid'
+DATA_INVALID_ERROR = "Received Data invalid"
 
-NETWORK_ERROR = 'Network error'
+NETWORK_ERROR = "Network error"
 
-RUNTIME_ERROR = 'Runtime error'
+RUNTIME_ERROR = "Runtime error"
 
-WEBSOCKET_ERROR = 'WebSocket error'
+WEBSOCKET_ERROR = "WebSocket error"
 
-UNKNOWN_ERROR = 'Unknown error'
+UNKNOWN_ERROR = "Unknown error"
 
-UNKNOWN_CLOSE_CODE = 'Unknown close code'
+UNKNOWN_CLOSE_CODE = "Unknown close code"
 
-SYSTEM_ERROR = 'System error'
+SYSTEM_ERROR = "System error"
 
-SYSTEM_QUIT = 'System quit'
+SYSTEM_QUIT = "System quit"
 
 
 class StateType(Enum):
@@ -31,6 +31,7 @@ class StateType(Enum):
     If it encounters an error that requires it to retry initialization, the state will remain at
     INITIALIZING until it either succeeds and becomes OK, or permanently fails and becomes OFF.
     """
+
     INITIALIZING = 1
     """
     Indicates that the update processing is currently operational and has not had any problems since the
@@ -68,7 +69,12 @@ class ErrorTrack:
 
 
 class State:
-    def __init__(self, state_type: "StateType", state_since: float, error_track: Optional["ErrorTrack"] = None):
+    def __init__(
+        self,
+        state_type: "StateType",
+        state_since: float,
+        error_track: Optional["ErrorTrack"] = None,
+    ):
         self.__state_type = state_type
         self.__state_since = state_since
         self.__error_track = error_track

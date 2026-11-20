@@ -24,10 +24,18 @@ If you want to use your own data source, see [Offline Mode](#offline-mode).
 ## Get Started
 
 ### Installation
-Install the SDK using pip. This version is compatible with Python 3.10 through 3.14.
+This version of the SDK is compatible with Python 3.10 through 3.14.
 CI is configured to test compatibility on Linux and Windows through Python 3.14,
 including the full unit suite and SDK resource-lifecycle audit.
 Free-threaded CPython 3.14 builds are not currently tested or supported.
+
+In a uv project, add the SDK with:
+
+```shell
+uv add fb-python-sdk
+```
+
+To install the published SDK with pip:
 
 ```shell
 pip install fb-python-sdk
@@ -83,7 +91,7 @@ shutdown, public runtime exception isolation, and redundant code. Run the
 local resource audit with:
 
 ```shell
-python scripts/resource_audit.py --evaluations 80000 --workers 8
+uv run python scripts/resource_audit.py --evaluations 80000 --workers 8
 ```
 
 To verify WebSocket synchronization, remote evaluation, status changes, event
@@ -91,7 +99,7 @@ delivery, and clean shutdown against FeatBit Cloud or a self-hosted evaluation
 service, set `FEATBIT_ENV_SECRET` and run:
 
 ```shell
-python scripts/live_integration_check.py
+uv run python scripts/live_integration_check.py
 ```
 
 The live script never prints or persists the environment secret. See the
@@ -273,6 +281,33 @@ client.track_metric(user, event_name, numeric_value);
 
 Make sure `track_metric` is called after the related feature flag is evaluated by simply calling `variation` or `variation_detail`
 otherwise, the custom event may not be included into the experiment result.
+
+## Development
+
+From the repository root, use [uv](https://docs.astral.sh/uv/getting-started/installation/)
+to sync the locked dependencies and run the project checks:
+
+```shell
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run python -m pytest
+uv build
+```
+
+Apply lint fixes and format the Python files with
+`uv run ruff check --fix .` and `uv run ruff format .`.
+
+Enable the Git hook once per clone with `uv run --locked pre-commit install`.
+Before each commit, the hook runs Ruff lint, Ruff format, and the full pytest
+suite in that order. If formatting changes a file, stage the changes and
+retry the commit.
+
+Set the release version with `uv version <version>`, which updates
+`pyproject.toml` and `uv.lock`. Update `release/description.md` with the release
+notes. After a push to `main` or `master`, GitHub Actions builds and checks the
+distributions. A required reviewer must approve the `py-production` deployment
+in Actions before the workflow creates the GitHub Release and publishes to PyPI.
 
 ## Getting support
 

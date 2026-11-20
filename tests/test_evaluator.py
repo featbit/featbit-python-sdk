@@ -6,9 +6,13 @@ import pytest
 from fbclient.category import FEATURE_FLAGS, SEGMENTS
 from fbclient.common_types import FBUser
 from fbclient.data_storage import InMemoryDataStorage
-from fbclient.evaluator import (REASON_FALLTHROUGH, REASON_FLAG_OFF,
-                                REASON_RULE_MATCH, REASON_TARGET_MATCH,
-                                Evaluator)
+from fbclient.evaluator import (
+    REASON_FALLTHROUGH,
+    REASON_FLAG_OFF,
+    REASON_RULE_MATCH,
+    REASON_TARGET_MATCH,
+    Evaluator,
+)
 from fbclient.event_types import FlagEvent
 from fbclient.streaming import _data_to_dict
 from fbclient.utils import valide_all_data
@@ -18,7 +22,11 @@ USER_2 = {"key": "test-target-user", "name": "test-target-user"}
 USER_3 = {"key": "test-true-user", "name": "test-true-user", "graduated": "true"}
 USER_4 = {"key": "test-equal-user", "name": "test-equal-user", "country": "CHN"}
 USER_5 = {"key": "test-than-user", "name": "test-than-user", "salary": "2500"}
-USER_6 = {"key": "test-contain-user", "name": "test-contain-user", "email": "test-contain-user@gmail.com"}
+USER_6 = {
+    "key": "test-contain-user",
+    "name": "test-contain-user",
+    "email": "test-contain-user@gmail.com",
+}
 USER_7 = {"key": "test-isoneof-user", "name": "test-isoneof-user", "major": "CS"}
 USER_8 = {"key": "group-admin-user", "name": "group-admin-user"}
 USER_9 = {"key": "test-regex-user", "name": "test-regex-user", "phone": "18555358000"}
@@ -27,12 +35,12 @@ USER_10 = {"key": "test-fallthrough-user", "name": "test-fallthrough-user"}
 
 @pytest.fixture
 def data_storage():
-    json_str = Path('tests/fbclient_test_data.json').read_text()
+    json_str = Path("tests/fbclient_test_data.json").read_text()
     data_storage = InMemoryDataStorage()
     if json_str:
         all_data = json.loads(json_str)
         if valide_all_data(all_data):
-            version, data = _data_to_dict(all_data['data'])
+            version, data = _data_to_dict(all_data["data"])
             data_storage.init(data, version)
     return data_storage
 

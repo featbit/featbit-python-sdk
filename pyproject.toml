@@ -1,3 +1,61 @@
 [build-system]
-requires = ["setuptools>=42"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.13.9,<0.14"]
+build-backend = "uv_build"
+
+[project]
+name = "fb-python-sdk"
+version = "1.2.1"
+description = "A Python SDK for FeatBit plateform"
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+license-files = ["LICENSE"]
+authors = [{ name = "Dian SUN", email = "featbit.master@gmail.com" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "certifi>=2018.4.16",
+    "python-dateutil>=2.8.2",
+    "urllib3>=1.26.5,<3",
+    "websocket-client>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/featbit/featbit-python-sdk"
+Code = "https://github.com/featbit/featbit-python-sdk"
+"Issue tracker" = "https://github.com/featbit/featbit/issues"
+
+[project.optional-dependencies]
+dev = ["build", "pytest", "pytest-mock", "twine"]
+
+[dependency-groups]
+dev = ["pre-commit>=4.4.0", "pytest", "pytest-mock", "ruff"]
+release = ["twine"]
+
+[tool.uv.build-backend]
+module-name = "fbclient"
+module-root = ""
+source-include = ["pytest.ini", "tests/**"]
+
+[tool.ruff]
+include = ["*.py", "*.pyi"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E111", "E114", "E117", "E722", "W191"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 199

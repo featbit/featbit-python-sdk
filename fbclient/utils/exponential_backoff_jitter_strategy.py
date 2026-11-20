@@ -5,16 +5,18 @@ Base in https://docs.aws.amazon.com/general/latest/gr/api-retries.html
 
 import random
 from time import time
+
 from fbclient.utils import log
 
 
 class BackoffAndJitterStrategy:
-
-    def __init__(self,
-                 first_delay_in_seconds: float = 1.0,
-                 max_delay_in_seconds: float = 60.0,
-                 reset_interval_in_seconds: float = 60,
-                 jitter_ratio: float = 0.5):
+    def __init__(
+        self,
+        first_delay_in_seconds: float = 1.0,
+        max_delay_in_seconds: float = 60.0,
+        reset_interval_in_seconds: float = 60,
+        jitter_ratio: float = 0.5,
+    ):
         self.__retry_times = 0
         self.__first_delay = first_delay_in_seconds
         self.__reset_interval = reset_interval_in_seconds
@@ -37,7 +39,11 @@ class BackoffAndJitterStrategy:
 
     def next_delay(self, force_to_restart_in_max_delay=False):
         current_time = time()
-        if self.__latest_good_run > 0 and self.__reset_interval > 0 and current_time - self.__latest_good_run > self.__reset_interval:
+        if (
+            self.__latest_good_run > 0
+            and self.__reset_interval > 0
+            and current_time - self.__latest_good_run > self.__reset_interval
+        ):
             self.__retry_times = 0
         if force_to_restart_in_max_delay:
             self.__retry_times = 0
@@ -47,5 +53,5 @@ class BackoffAndJitterStrategy:
             delay = self.__count_jitter_time(backoff) + backoff / 2
         self.__retry_times += 1
         self.__latest_good_run = 0
-        log.debug('next delay is %s' % str(delay))
+        log.debug("next delay is %s" % str(delay))
         return delay

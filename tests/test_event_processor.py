@@ -1,9 +1,10 @@
 import base64
 import threading
 from time import sleep
-import pytest
-from fbclient.common_types import FBUser
 
+import pytest
+
+from fbclient.common_types import FBUser
 from fbclient.config import Config
 from fbclient.event_processor import DefaultEventProcessor
 from fbclient.event_types import UserEvent
@@ -28,11 +29,13 @@ def mock_sender(ready_event):
 
 @pytest.fixture
 def event_processor(mock_sender):
-    config = Config(FAKE_ENV_SECRET,
-                    event_url=FAKE_URL,
-                    streaming_url=FAKE_URL,
-                    events_flush_interval=0.1,
-                    events_max_in_queue=100)
+    config = Config(
+        FAKE_ENV_SECRET,
+        event_url=FAKE_URL,
+        streaming_url=FAKE_URL,
+        events_flush_interval=0.1,
+        events_max_in_queue=100,
+    )
     return DefaultEventProcessor(config, mock_sender)
 
 
@@ -42,7 +45,9 @@ def test_event_processor_start_and_stop(event_processor, mock_sender):
     assert mock_sender.closed
 
 
-def test_event_processor_can_gracefully_close_if_sender_error_on_close(event_processor, mock_sender):
+def test_event_processor_can_gracefully_close_if_sender_error_on_close(
+    event_processor, mock_sender
+):
     with event_processor:
         mock_sender.fake_error_on_close = RuntimeError("test exception")
         assert mock_sender.get_sending_json_info(timeout=0.2) is None
@@ -102,7 +107,9 @@ def test_event_processor_cannot_send_anything_after_close(event_processor, mock_
     assert mock_sender.get_sending_json_info(timeout=0.2) is None
 
 
-def test_event_processor_events_keep_in_buffer_if_all_flush_payload_runner_are_busy(event_processor, mock_sender, ready_event):
+def test_event_processor_events_keep_in_buffer_if_all_flush_payload_runner_are_busy(
+    event_processor, mock_sender, ready_event
+):
     with event_processor as ep:
         mock_sender.thread_num = 5
         for _ in range(5):
@@ -135,11 +142,13 @@ def test_stop_flushes_accepted_events_when_inbox_is_full(mock_sender):
             release_first.wait(1.0)
             return True
 
-    config = Config(FAKE_ENV_SECRET,
-                    event_url=FAKE_URL,
-                    streaming_url=FAKE_URL,
-                    events_flush_interval=3.0,
-                    events_max_in_queue=1)
+    config = Config(
+        FAKE_ENV_SECRET,
+        event_url=FAKE_URL,
+        streaming_url=FAKE_URL,
+        events_flush_interval=3.0,
+        events_max_in_queue=1,
+    )
     processor = DefaultEventProcessor(config, mock_sender)
     # RepeatableTask invokes its callback once on startup. Let that empty flush
     # leave the one-slot inbox before constructing the full-queue scenario.
@@ -177,11 +186,13 @@ def test_event_processor_can_stop_from_dispatcher_thread(mock_sender):
             holder["processor"].stop()
             return True
 
-    config = Config(FAKE_ENV_SECRET,
-                    event_url=FAKE_URL,
-                    streaming_url=FAKE_URL,
-                    events_flush_interval=3.0,
-                    events_max_in_queue=10)
+    config = Config(
+        FAKE_ENV_SECRET,
+        event_url=FAKE_URL,
+        streaming_url=FAKE_URL,
+        events_flush_interval=3.0,
+        events_max_in_queue=10,
+    )
     processor = DefaultEventProcessor(config, mock_sender)
     holder["processor"] = processor
     processor.send_event(SelfStoppingUserEvent(FBUser.from_dict(USER_1)))

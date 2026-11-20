@@ -13,7 +13,6 @@ import fbclient
 from fbclient.client import FBClient
 from fbclient.config import Config
 
-
 PACKAGE_NAME = "fb-python-sdk"
 FAKE_ENV_SECRET = base64.b64encode(b"fake_env_secret").decode()
 FAKE_URL = "http://fake"
@@ -53,7 +52,15 @@ def assert_metadata(expected_version):
     assert "Programming Language :: Python :: 3.10" in classifiers
     assert "Programming Language :: Python :: 3.14" in classifiers
     requirements = distribution.requires or []
-    assert any(requirement.startswith("urllib3<3,>=1.26.5") for requirement in requirements)
+    assert any(
+        {
+            specifier.strip()
+            for specifier in requirement.removeprefix("urllib3").split(",")
+        }
+        == {"<3", ">=1.26.5"}
+        for requirement in requirements
+        if requirement.startswith("urllib3")
+    )
     return distribution.version
 
 
@@ -103,9 +110,7 @@ def main():
     args = parse_args()
     expected_version = args.expected_version
     if args.expected_version_file:
-        expected_version = json.loads(
-            args.expected_version_file.read_text()
-        )["version"]
+        expected_version = json.loads(args.expected_version_file.read_text())["version"]
     assert_installed_package()
     version = assert_metadata(expected_version)
     states = exercise_client(args.bootstrap)

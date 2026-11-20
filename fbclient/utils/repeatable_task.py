@@ -11,8 +11,9 @@ from fbclient.utils import log
 
 
 class RepeatableTask(Thread):
-
-    def __init__(self, name: str, interval: float, callable: Callable, args=(), kwargs=None):
+    def __init__(
+        self, name: str, interval: float, callable: Callable, args=(), kwargs=None
+    ):
         super().__init__(name=name, daemon=True)
         self._interval = interval
         self._callable = callable
@@ -29,7 +30,9 @@ class RepeatableTask(Thread):
         if current_thread() is not self and self.is_alive():
             self.join(timeout)
             if self.is_alive():
-                log.warning("FB Python SDK: %s repeatable task did not stop in time" % self.name)
+                log.warning(
+                    "FB Python SDK: %s repeatable task did not stop in time" % self.name
+                )
 
     def run(self):
         log.debug("%s repeatable task is starting..." % self.name)
@@ -39,6 +42,11 @@ class RepeatableTask(Thread):
             try:
                 self._callable(*self._args, **self._kwargs)
             except Exception as e:
-                log.exception("FB Python SDK: unexpected exception on %s repeatable task: %s" % (self.name, str(e)))
+                log.exception(
+                    "FB Python SDK: unexpected exception on %s repeatable task: %s"
+                    % (self.name, str(e))
+                )
             delay = next_time - time()
-            stopped = self._stop_event.wait(delay) if delay > 0 else self._stop_event.is_set()
+            stopped = (
+                self._stop_event.wait(delay) if delay > 0 else self._stop_event.is_set()
+            )

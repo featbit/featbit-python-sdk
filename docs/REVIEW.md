@@ -43,16 +43,18 @@ usable; runtime evaluation, event, status, and shutdown paths are isolated.
 Run from the repository root:
 
 ```shell
-python -m pytest
-python -m flake8 .
-python scripts/resource_audit.py --evaluations 80000 --workers 8
-python -m build
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run python -m pytest
+uv run python scripts/resource_audit.py --evaluations 80000 --workers 8
+uv build
 ```
 
 Result on Python 3.12.13 (2026-08-07):
 
 - 83 unit/integration tests passed.
-- Flake8 passed.
+- The lint check passed.
 - 80,000 evaluations across 8 workers completed with 0 concurrent errors.
 - Throughput was 12,490 evaluations/second on the final audit run.
 - No FeatBit SDK worker threads remained after shutdown.
@@ -73,7 +75,7 @@ Use a real environment Server Key without storing it in the repository:
 ```shell
 export FEATBIT_ENV_SECRET='<server-key>'
 export FEATBIT_FLAG_KEY='python-app-release'
-python scripts/live_integration_check.py
+uv run python scripts/live_integration_check.py
 ```
 
 Optional variables are `FEATBIT_STREAMING_URL`, `FEATBIT_EVENT_URL`, and

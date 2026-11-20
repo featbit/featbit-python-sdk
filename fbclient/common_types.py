@@ -4,21 +4,18 @@ from typing import Any, Callable, Dict, Mapping, Optional
 
 from fbclient.utils import cast_variation_by_flag_type, is_numeric
 
-__BUILTINS_MAPING__ = {'key': 'keyid',
-                       'name': 'name',
-                       'keyid': 'keyid'}
+__BUILTINS_MAPING__ = {"key": "keyid", "name": "name", "keyid": "keyid"}
 
-__NO_VARIATION__ = 'NE'
+__NO_VARIATION__ = "NE"
 
-__FLAG_NOT_FOUND__ = 'flag not found'
+__FLAG_NOT_FOUND__ = "flag not found"
 
-__FLAG_KEY_UNKNOWN__ = 'flag key unknown'
+__FLAG_KEY_UNKNOWN__ = "flag key unknown"
 
-__FLAG_NAME_UNKNOWN__ = 'flag name unknown'
+__FLAG_NAME_UNKNOWN__ = "flag name unknown"
 
 
 class Jsonfy(ABC):
-
     @abstractmethod
     def to_json_dict(self) -> dict:
         pass
@@ -28,27 +25,32 @@ class Jsonfy(ABC):
 
 
 class FBUser(Jsonfy):
-
     def __init__(self, key: Optional[str], name: Optional[str], **kwargs):
-        self._check_argument(key, 'key is not valid')
-        self._check_argument(name, 'name is not valid')
+        self._check_argument(key, "key is not valid")
+        self._check_argument(name, "name is not valid")
         self._commons = {}
-        self._commons['keyid'] = key
-        self._commons['name'] = name
+        self._commons["keyid"] = key
+        self._commons["name"] = name
         self._customs = {}
         if len(kwargs) > 0:
-            self._customs \
-                .update(dict((k, str(v)) for k, v in kwargs.items() if isinstance(k, str) and k.lower() not in __BUILTINS_MAPING__.keys()
-                             and (isinstance(v, str) or is_numeric(v) or isinstance(v, bool))))
+            self._customs.update(
+                dict(
+                    (k, str(v))
+                    for k, v in kwargs.items()
+                    if isinstance(k, str)
+                    and k.lower() not in __BUILTINS_MAPING__.keys()
+                    and (isinstance(v, str) or is_numeric(v) or isinstance(v, bool))
+                )
+            )
 
     @staticmethod
     def from_dict(user: Dict[str, Any]) -> "FBUser":
         user_copy = {}
         if not isinstance(user, dict):
-            raise ValueError('user is not valid')
+            raise ValueError("user is not valid")
         user_copy.update(user)
-        key = user_copy.pop('key', None) or user_copy.pop('keyid', None)
-        name = user_copy.pop('name', None)
+        key = user_copy.pop("key", None) or user_copy.pop("keyid", None)
+        name = user_copy.pop("name", None)
         return FBUser(key, name, **user_copy)
 
     def _check_argument(self, value, msg) -> bool:
@@ -70,9 +72,11 @@ class FBUser(Jsonfy):
 
     def to_json_dict(self) -> dict:
         json_dict = {}
-        json_dict['keyId'] = self._commons['keyid']
-        json_dict['name'] = self._commons['name']
-        json_dict['customizedProperties'] = [{'name': k, 'value': v} for k, v in self._customs.items()]
+        json_dict["keyId"] = self._commons["keyid"]
+        json_dict["name"] = self._commons["name"]
+        json_dict["customizedProperties"] = [
+            {"name": k, "value": v} for k, v in self._customs.items()
+        ]
         return json_dict
 
 
@@ -86,12 +90,14 @@ class EvalDetail(Jsonfy):
         4: float if the feature flag is a numeric type
     """
 
-    def __init__(self,
-                 reason: str,
-                 variation: Any,
-                 key_name: Optional[str] = None,
-                 name: Optional[str] = None,
-                 variation_id: Optional[str] = None):
+    def __init__(
+        self,
+        reason: str,
+        variation: Any,
+        key_name: Optional[str] = None,
+        name: Optional[str] = None,
+        variation_id: Optional[str] = None,
+    ):
         """Constructs an instance.
 
         :param reason: main factor that influenced the flag evaluation value
@@ -108,8 +114,7 @@ class EvalDetail(Jsonfy):
 
     @property
     def reason(self) -> str:
-        """A string describing the main factor that influenced the flag evaluation value.
-        """
+        """A string describing the main factor that influenced the flag evaluation value."""
         return self._reason
 
     @property
@@ -121,34 +126,30 @@ class EvalDetail(Jsonfy):
 
     @property
     def key_name(self) -> Optional[str]:
-        """The flag key name
-        """
+        """The flag key name"""
         return self._key_name
 
     @property
     def name(self) -> Optional[str]:
-        """The flag name
-        """
+        """The flag name"""
         return self._name
 
     @property
     def variation_id(self) -> Optional[str]:
-        """The stable identifier of the resolved variation, if evaluation succeeded.
-        """
+        """The stable identifier of the resolved variation, if evaluation succeeded."""
         return self._variation_id
 
     def to_json_dict(self) -> dict:
         json_dict = {}
-        json_dict['reason'] = self.reason
-        json_dict['variation'] = self.variation
-        json_dict['keyName'] = self.key_name
-        json_dict['name'] = self.name
+        json_dict["reason"] = self.reason
+        json_dict["variation"] = self.variation
+        json_dict["keyName"] = self.key_name
+        json_dict["name"] = self.name
         return json_dict
 
 
 class BasicFlagState:
-    """Abstract class representing flag state after feature flag evaluaion
-    """
+    """Abstract class representing flag state after feature flag evaluaion"""
 
     def __init__(self, success: bool, reason: str):
         """Constructs an instance.
@@ -157,18 +158,16 @@ class BasicFlagState:
         :param reason: the state of last evaluation; the value is OK if successful
         """
         self._success = success
-        self._reason = 'OK' if success else reason
+        self._reason = "OK" if success else reason
 
     @property
     def success(self) -> bool:
-        """Returns true if last evaluation was successful
-        """
+        """Returns true if last evaluation was successful"""
         return self._success
 
     @property
     def reason(self) -> str:
-        """reason the state of last evaluation; the value is OK if successful
-        """
+        """reason the state of last evaluation; the value is OK if successful"""
         return self._reason
 
 
@@ -199,9 +198,11 @@ class FlagState(BasicFlagState, Jsonfy):
         return self._data
 
     def to_json_dict(self) -> dict:
-        return {'success': self.success,
-                'reason': self.reason,
-                'data': self._data.to_json_dict() if self._data else None}
+        return {
+            "success": self.success,
+            "reason": self.reason,
+            "data": self._data.to_json_dict() if self._data else None,
+        }
 
 
 class AllFlagStates(BasicFlagState, Jsonfy):
@@ -209,9 +210,13 @@ class AllFlagStates(BasicFlagState, Jsonfy):
     :func:`get(key_name)` to get the state for a given feature flag key
     """
 
-    def __init__(self, success: bool, reason: str,
-                 data: Mapping[EvalDetail, "FBEvent"],
-                 event_handler: Callable[["FBEvent"], None]):
+    def __init__(
+        self,
+        success: bool,
+        reason: str,
+        data: Mapping[EvalDetail, "FBEvent"],
+        event_handler: Callable[["FBEvent"], None],
+    ):
         """Constructs an instance.
 
         :param success: True if successful
@@ -220,7 +225,11 @@ class AllFlagStates(BasicFlagState, Jsonfy):
         :event_handler: callback function used to send events to feature flag center
         """
         super().__init__(success, reason)
-        self._data = dict((ed.key_name, (ed, fb_event)) for ed, fb_event in data.items()) if data else {}
+        self._data = (
+            dict((ed.key_name, (ed, fb_event)) for ed, fb_event in data.items())
+            if data
+            else {}
+        )
         self._event_handler = event_handler
 
     def keys(self):
@@ -254,15 +263,25 @@ class AllFlagStates(BasicFlagState, Jsonfy):
         ed, fb_event = self._data.get(key_name, (None, False))
         if self._event_handler and fb_event:
             self._event_handler(fb_event)
-        return ed if ed is not None else EvalDetail(reason=__FLAG_NOT_FOUND__,
-                                                    variation=default,
-                                                    key_name=key_name,
-                                                    name=__FLAG_NAME_UNKNOWN__)
+        return (
+            ed
+            if ed is not None
+            else EvalDetail(
+                reason=__FLAG_NOT_FOUND__,
+                variation=default,
+                key_name=key_name,
+                name=__FLAG_NAME_UNKNOWN__,
+            )
+        )
 
     def to_json_dict(self) -> dict:
-        return {'success': self.success,
-                'message': self.reason,
-                'data': [ed.to_json_dict() for ed, _ in self._data.values()] if self._data else []}
+        return {
+            "success": self.success,
+            "message": self.reason,
+            "data": [ed.to_json_dict() for ed, _ in self._data.values()]
+            if self._data
+            else [],
+        }
 
 
 class FBEvent(Jsonfy, ABC):
@@ -270,7 +289,7 @@ class FBEvent(Jsonfy, ABC):
         self._user = user
 
     @abstractmethod
-    def add(self, *elements) -> 'FBEvent':
+    def add(self, *elements) -> "FBEvent":
         pass
 
     @property
@@ -280,14 +299,15 @@ class FBEvent(Jsonfy, ABC):
 
 
 class _EvalResult:
-
-    def __init__(self,
-                 id: str,
-                 value: Optional[str],
-                 reason: str,
-                 key_name: Optional[str] = None,
-                 name: Optional[str] = None,
-                 flag_type: Optional[str] = 'string'):
+    def __init__(
+        self,
+        id: str,
+        value: Optional[str],
+        reason: str,
+        key_name: Optional[str] = None,
+        name: Optional[str] = None,
+        flag_type: Optional[str] = "string",
+    ):
 
         self.__id = id
         self.__value = value
@@ -297,8 +317,20 @@ class _EvalResult:
         self.__flag_type = flag_type
 
     @staticmethod
-    def error(default_value: Optional[str], reason: str, key_name: Optional[str] = None, flag_type: Optional[str] = 'string'):
-        return _EvalResult(__NO_VARIATION__, default_value, reason, key_name if key_name else __FLAG_KEY_UNKNOWN__, __FLAG_NAME_UNKNOWN__, flag_type)
+    def error(
+        default_value: Optional[str],
+        reason: str,
+        key_name: Optional[str] = None,
+        flag_type: Optional[str] = "string",
+    ):
+        return _EvalResult(
+            __NO_VARIATION__,
+            default_value,
+            reason,
+            key_name if key_name else __FLAG_KEY_UNKNOWN__,
+            __FLAG_NAME_UNKNOWN__,
+            flag_type,
+        )
 
     @property
     def id(self) -> str:
@@ -332,7 +364,9 @@ class _EvalResult:
     def to_evail_detail(self) -> "EvalDetail":
         _value = cast_variation_by_flag_type(self.__flag_type, self.__value)
         variation_id = self.__id if self.is_success else None
-        return EvalDetail(self.__reason, _value, self.__key_name, self.__name, variation_id)
+        return EvalDetail(
+            self.__reason, _value, self.__key_name, self.__name, variation_id
+        )
 
     @property
     def to_flag_state(self) -> "FlagState":
