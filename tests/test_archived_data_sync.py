@@ -54,17 +54,22 @@ def test_data_sync_with_an_archived_flag_still_broadcasts_changes():
     notices: Queue = Queue()
     broadcaster.add_listener(FLAG_CHANGE_NOTICE_TYPE, notices.put)
     streaming = Streaming(
-        Config(FAKE_ENV_SECRET, event_url=FAKE_URL, streaming_url=FAKE_URL),
+        Config(
+            FAKE_ENV_SECRET, event_url=FAKE_URL, streaming_url=FAKE_URL, offline=True
+        ),
         broadcaster,
         DataUpdateStatusProviderImpl(InMemoryDataStorage()),
         threading.Event(),
     )
 
     try:
-        assert streaming._on_process_data(load_data(archived_flag_keys={"ff-test-bool"}))
+        assert streaming._on_process_data(
+            load_data(archived_flag_keys={"ff-test-bool"})
+        )
         changed_keys = set()
         while len(changed_keys) < 7:
             changed_keys.add(notices.get(timeout=1).flag_key)
         assert "ff-test-bool" in changed_keys
     finally:
+        streaming.stop()
         broadcaster.stop()
