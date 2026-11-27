@@ -74,7 +74,12 @@ def _data_to_dict(data: dict) -> Tuple[int, dict]:
         flag["id"] = flag["key"]
         flag["cat"] = FEATURE_FLAGS
         flags[flag["id"]] = (
-            {"id": flag["id"], "timestamp": flag["timestamp"], "isArchived": True}
+            {
+                "id": flag["id"],
+                "cat": FEATURE_FLAGS,
+                "timestamp": flag["timestamp"],
+                "isArchived": True,
+            }
             if flag["isArchived"]
             else flag
         )
@@ -83,7 +88,12 @@ def _data_to_dict(data: dict) -> Tuple[int, dict]:
         segment["timestamp"] = from_str_datetime_to_millis(segment["updatedAt"])
         segment["cat"] = SEGMENTS
         segments[segment["id"]] = (
-            {"id": segment["id"], "timestamp": segment["timestamp"], "isArchived": True}
+            {
+                "id": segment["id"],
+                "cat": SEGMENTS,
+                "timestamp": segment["timestamp"],
+                "isArchived": True,
+            }
             if segment["isArchived"]
             else segment
         )
